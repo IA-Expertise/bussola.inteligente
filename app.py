@@ -257,6 +257,8 @@ def build_notification_bodies(
         f"Segmento: {lead.get('segmento', '')}",
         f"Instagram: {lead.get('instagram', '')}",
         f"WhatsApp (lead): {lead.get('whatsapp', '')}",
+        f"E-mail (lead): {lead.get('email_cliente', '')}",
+        f"Opt-in contato: {lead.get('optin', '')}",
         f"Maior dor: {lead.get('dor', '')}",
         "",
         "Notas (0–10):",
@@ -286,6 +288,8 @@ def build_notification_bodies(
             ("Segmento", lead.get("segmento", "")),
             ("Instagram", lead.get("instagram", "")),
             ("WhatsApp", lead.get("whatsapp", "")),
+            ("E-mail", lead.get("email_cliente", "")),
+            ("Opt-in contato", lead.get("optin", "")),
             ("Maior dor", lead.get("dor", "")),
         ]
     )
@@ -370,6 +374,8 @@ def save_lead_csv(row: dict) -> None:
         "segmento",
         "instagram",
         "whatsapp",
+        "email_cliente",
+        "optin_autorizado",
         "dor",
         "presenca_visual",
         "agilidade_resposta",
@@ -419,6 +425,17 @@ def main() -> None:
             instagram = st.text_input("Instagram (@)", placeholder="@suaempresa")
             whatsapp_in = st.text_input("WhatsApp com DDD", placeholder="(11) 99999-9999")
 
+        email_cliente = st.text_input(
+            "E-mail do contato",
+            placeholder="nome@empresa.com.br",
+            help="Para registro do lead. Obrigatório se você marcar a autorização abaixo.",
+        )
+        optin = st.checkbox(
+            "Autorizo a IAExpertise a me contatar por e-mail e WhatsApp sobre este diagnóstico, "
+            "soluções de IA e presença digital. Sei que posso retirar essa autorização quando quiser (opt-in).",
+            value=False,
+        )
+
         dor = st.radio(
             "Qual sua maior dor hoje?",
             options=[
@@ -442,6 +459,11 @@ def main() -> None:
         st.error("Informe pelo menos o nome da empresa.")
         return
 
+    email_stripped = email_cliente.strip()
+    if optin and not email_stripped:
+        st.error("Para registrar o opt-in, informe seu e-mail.")
+        return
+
     user_payload = {
         "nome": nome.strip(),
         "empresa": empresa.strip(),
@@ -450,6 +472,8 @@ def main() -> None:
         "instagram": instagram.strip(),
         "whatsapp": whatsapp_in.strip(),
         "dor_principal": dor,
+        "email_cliente": email_stripped,
+        "optin_contato": optin,
     }
 
     with st.spinner("Analisando presença digital e montando seu relatório..."):
@@ -501,6 +525,8 @@ def main() -> None:
         "segmento": segmento.strip(),
         "instagram": instagram.strip(),
         "whatsapp": whatsapp_in.strip(),
+        "email_cliente": email_stripped,
+        "optin_autorizado": "sim" if optin else "nao",
         "dor": dor,
         **{k: scores[k] for k in scores},
         "banho_realidade": result["banho_realidade"],
@@ -517,6 +543,8 @@ def main() -> None:
         "segmento": segmento.strip(),
         "instagram": instagram.strip(),
         "whatsapp": whatsapp_in.strip(),
+        "email_cliente": email_stripped,
+        "optin": "sim" if optin else "nao",
         "dor": dor,
     }
     ok_mail, err_mail = send_agentmail_notification(lead_for_mail, scores, result, ts)
