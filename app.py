@@ -35,6 +35,13 @@ AGENTMAIL_INBOX_CLIENT_ID = os.getenv(
     "AGENTMAIL_INBOX_CLIENT_ID", "iaexpertise-bussola-diagnostico"
 )
 
+# LinkedIn — empresa IAexpertise (página pública; sobrescreva via Secret se mudar)
+# Referência: https://www.linkedin.com/company/iaexpertise/
+LINKEDIN_IAEXPERTISE_URL = os.getenv(
+    "LINKEDIN_IAEXPERTISE_URL",
+    "https://www.linkedin.com/company/iaexpertise/",
+)
+
 SYSTEM_PROMPT = """Você é um consultor sênior de presença digital para micro e pequenas empresas brasileiras.
 Seja crítico, honesto e útil — sem floreio vazio. Use português do Brasil.
 
