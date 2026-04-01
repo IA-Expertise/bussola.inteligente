@@ -317,15 +317,6 @@ def build_notification_bodies(
     return text_body, html_body
 
 
-def _split_inbox_address(addr: str) -> tuple[str, str]:
-    """Extrai usuário e domínio de 'nome@dominio' (padrão agentmail.to)."""
-    addr = (addr or "").strip()
-    if "@" not in addr:
-        return "bussola.inteligente", "agentmail.to"
-    local, domain = addr.rsplit("@", 1)
-    return local.strip() or "bussola.inteligente", (domain.strip() or "agentmail.to")
-
-
 def send_agentmail_notification(
     lead: dict,
     scores: dict,
@@ -335,6 +326,9 @@ def send_agentmail_notification(
     """
     Envia cópia do diagnóstico a partir de AGENTMAIL_INBOX (ex.: bussola.inteligente@agentmail.to)
     para AGENTMAIL_NOTIFY_TO via AgentMail.
+
+    Usa o inbox já existente (ID = endereço completo). Não chama inboxes.create por envio,
+    para evitar LimitExceededError no plano gratuito.
     Retorna (ok, mensagem_erro).
     """
     api_key = os.getenv("AGENTMAIL_API_KEY")
@@ -343,26 +337,20 @@ def send_agentmail_notification(
 
     try:
         from agentmail import AgentMail
-        from agentmail.inboxes.types import CreateInboxRequest
     except ImportError:
         return False, "Pacote 'agentmail' não instalado (pip install agentmail)"
 
     text_body, html_body = build_notification_bodies(lead, scores, result, ts)
     empresa = (lead.get("empresa") or "Lead").strip()
     subject = f"[Bússola] Novo diagnóstico — {empresa}"
-
-    username, domain = _split_inbox_address(AGENTMAIL_INBOX)
+    inbox_id = (AGENTMAIL_INBOX or "").strip()
+    if not inbox_id or "@" not in inbox_id:
+        return False, "AGENTMAIL_INBOX inválido (ex.: bussola.inteligente@agentmail.to)"
 
     try:
         client = AgentMail(api_key=api_key)
-        inbox = client.inboxes.create(
-            request=CreateInboxRequest(
-                username=username,
-                domain=domain,
-            )
-        )
         client.inboxes.messages.send(
-            inbox.inbox_id,
+            inbox_id,
             to=AGENTMAIL_NOTIFY_TO,
             subject=subject,
             text=text_body,
@@ -539,7 +527,7 @@ def main() -> None:
     else:
         st.warning(
             f"E-mail de notificação não enviado: {err_mail}. "
-            "Configure `AGENTMAIL_API_KEY` no ambiente para ativar o envio."
+            "Confira `AGENTMAIL_API_KEY`, o inbox no console AgentMail e variáveis `AGENTMAIL_INBOX` / `AGENTMAIL_NOTIFY_TO`."
         )
 
     # CTA WhatsApp
