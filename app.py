@@ -1,6 +1,6 @@
 """
-MVP — Diagnóstico de Maturidade Digital (Streamlit + OpenAI GPT-4o-mini)
-IAExpertise — leads em leads.csv
+Bússola Inteligente — Diagnóstico de maturidade digital (Streamlit + GPT-4o-mini)
+IAExpertise · leads em leads.csv · AgentMail para notificação interna
 """
 
 from __future__ import annotations
@@ -22,62 +22,80 @@ from openai import OpenAI
 load_dotenv()
 
 # -----------------------------------------------------------------------------
-# Configuração — ajuste o WhatsApp do Arquiteto (DDI + DDD + número, só dígitos)
+# Configuração
 # -----------------------------------------------------------------------------
 WHATSAPP_ARQUITETO = os.getenv("WHATSAPP_ARQUITETO", "5511999999999")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 LEADS_CSV = Path(__file__).resolve().parent / "leads.csv"
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+PROFILE_IMAGE = ASSETS_DIR / "perfil.jpg"
 
-# AgentMail — remetente (inbox) e destino da notificação (console.agentmail.to)
 AGENTMAIL_INBOX = os.getenv("AGENTMAIL_INBOX", "bussola.inteligente@agentmail.to")
 AGENTMAIL_NOTIFY_TO = os.getenv("AGENTMAIL_NOTIFY_TO", "contato@iaexpertise.com.br")
-AGENTMAIL_INBOX_CLIENT_ID = os.getenv(
-    "AGENTMAIL_INBOX_CLIENT_ID", "iaexpertise-bussola-diagnostico"
-)
 
-# LinkedIn — empresa IAexpertise (página pública; sobrescreva via Secret se mudar)
-# Referência: https://www.linkedin.com/company/iaexpertise/
 LINKEDIN_IAEXPERTISE_URL = os.getenv(
     "LINKEDIN_IAEXPERTISE_URL",
     "https://www.linkedin.com/company/iaexpertise/",
 )
 
-SYSTEM_PROMPT = """Você é um consultor sênior de presença digital para micro e pequenas empresas brasileiras.
-Seja crítico, honesto e útil — sem floreio vazio. Use português do Brasil.
+# Vídeo da landing — substitua por URL do YouTube (Secret YOUTUBE_VIDEO_URL no Replit)
+YOUTUBE_VIDEO_URL = os.getenv(
+    "YOUTUBE_VIDEO_URL",
+    "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+)
+
+SAPPHIRE = "#0F52BA"
+
+DOR_SEBRAE_OPCOES = [
+    "Falta de controle financeiro",
+    "Informalidade",
+    "Contratação",
+    "Captação de clientes",
+    "Presença digital mínima",
+]
+
+SCORE_KEYS = ["atendimento", "visual", "seo_local", "tecnologia", "autoridade"]
+
+SYSTEM_PROMPT = """Você é um consultor sênior de presença digital e negócios para microempresas brasileiras.
+Use português do Brasil. Seja direto, honesto e útil.
+
+Contexto: as cinco maiores dificuldades frequentemente citadas para MEI/pequenos negócios incluem temas como controle financeiro, informalidade, contratação, captação de clientes e presença digital. O diagnóstico a seguir foca presença digital e canais; quando a "dor" do usuário for finanças ou contratação, reconheça isso na "dica de gestor" sem fingir que o gráfico mede fluxo de caixa ou RH.
 
 TAREFA:
-Com base nos dados informados pelo usuário (empresa, segmento, site, redes, dor principal), produza um diagnóstico estruturado.
+Com base nos dados informados (empresa, segmento, site, redes, WhatsApp, dor Sebrae selecionada), produza um diagnóstico em JSON.
 
-NOTAS (0 a 10, inteiros) para cada dimensão:
-1) presenca_visual — identidade, consistência visual, percepção de profissionalismo no que for dedutível.
-2) agilidade_resposta — capacidade aparente de responder rápido (canais informados, presença em WhatsApp, etc.).
-3) seo_local — ser encontrado no Google/local (site, Google Meu Negócio, menções, sinais locais).
-4) autoridade — conteúdo, prova social, reputação percebida no que for inferível.
-5) uso_tecnologia — automação, chatbots, IA, integrações, modernização aparente.
+NOTAS inteiras de 0 a 10:
+- atendimento — agilidade e qualidade aparente de resposta (WhatsApp, canais informados).
+- visual — identidade e consistência visual dedutível.
+- seo_local — ser encontrado no Google / local / GMB.
+- tecnologia — automação, IA, integrações, modernização.
+- autoridade — conteúdo, prova social, reputação percebida.
 
-O relatório tem DUAS partes obrigatórias:
-A) banho_realidade — fatos duros e diretos sobre lacunas. Inclua pelo menos UMA referência a dado de mercado realista no tom: ex. "Segundo o Sebrae, demorar a responder no WhatsApp pode reduzir drasticamente as chances de conversão" (não invente números precisos se não tiver certeza — use formulações como "estudos indicam" quando necessário).
-B) plano_modernizacao — plano acionável mencionando explicitamente a solução Lia (atendimento inteligente no WhatsApp) e produção de vídeos e posts com apoio de IA (IAExpertise).
+TRÊS textos obrigatórios:
+1) raio_x_realista — "raio-X" crítico da presença digital (sem floreio).
+2) dica_gestor — conselho prático alinhado à DOR SEBRAE escolhida pelo usuário (Sebrae como referência de contexto; não invente estatísticas exatas).
+3) oportunidades_iaexpertise — como Lia (atendimento no WhatsApp) e produção de conteúdo/vídeo com IA ajudam nos pontos citados.
 
-Para cada dimensão, escreva um parágrafo curto em detalhes[NOME_DA_CHAVE] explicando a nota.
+Para cada eixo, detalhes[NOME] explica a nota em um parágrafo curto.
 
-RESPONDA APENAS com um JSON válido (sem markdown, sem texto fora do JSON) neste formato exato:
+RESPONDA APENAS com JSON válido (sem markdown):
 {
   "scores": {
-    "presenca_visual": <int 0-10>,
-    "agilidade_resposta": <int 0-10>,
+    "atendimento": <int 0-10>,
+    "visual": <int 0-10>,
     "seo_local": <int 0-10>,
-    "autoridade": <int 0-10>,
-    "uso_tecnologia": <int 0-10>
+    "tecnologia": <int 0-10>,
+    "autoridade": <int 0-10>
   },
-  "banho_realidade": "<texto com seções ou parágrafos claros>",
-  "plano_modernizacao": "<texto com passos e menção Lia + vídeos/posts por IA>",
+  "raio_x_realista": "<texto>",
+  "dica_gestor": "<texto>",
+  "oportunidades_iaexpertise": "<texto>",
   "detalhes": {
-    "presenca_visual": "<texto>",
-    "agilidade_resposta": "<texto>",
+    "atendimento": "<texto>",
+    "visual": "<texto>",
     "seo_local": "<texto>",
-    "autoridade": "<texto>",
-    "uso_tecnologia": "<texto>"
+    "tecnologia": "<texto>",
+    "autoridade": "<texto>"
   }
 }
 """
@@ -85,46 +103,58 @@ RESPONDA APENAS com um JSON válido (sem markdown, sem texto fora do JSON) neste
 
 def inject_css() -> None:
     st.markdown(
-        """
+        f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
-        html, body, [class*="css"] { font-family: 'DM Sans', system-ui, sans-serif; }
-        .stApp {
-            background: linear-gradient(165deg, #0b1220 0%, #0f172a 45%, #111827 100%);
-        }
-        div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stMarkdown"] h1) {
-            padding-bottom: 0.25rem;
-        }
-        h1 { letter-spacing: -0.03em; font-weight: 700 !important; color: #f8fafc !important; }
-        h2, h3 { color: #e2e8f0 !important; font-weight: 600 !important; }
-        .hero-sub {
-            color: #94a3b8; font-size: 1.05rem; margin-top: 0.35rem; margin-bottom: 1.25rem;
-        }
-        .card {
-            background: rgba(30, 41, 59, 0.65);
-            border: 1px solid rgba(148, 163, 184, 0.18);
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap');
+        html, body, [class*="css"] {{ font-family: 'DM Sans', system-ui, sans-serif; }}
+        .stApp {{
+            background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 40%, #111827 100%);
+        }}
+        h1 {{ letter-spacing: -0.03em; font-weight: 700 !important; color: #f8fafc !important; }}
+        h2, h3 {{ color: #e2e8f0 !important; font-weight: 600 !important; }}
+        .tagline-saph {{ color: {SAPPHIRE}; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }}
+        .hero-sub {{ color: #94a3b8; font-size: 1.05rem; margin: 0.5rem 0 1.25rem; }}
+        .card-saph {{
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(15, 82, 186, 0.35);
             border-radius: 14px;
             padding: 1.15rem 1.25rem;
             margin-bottom: 1rem;
-            backdrop-filter: blur(8px);
-        }
-        .tagline { color: #22d3ee; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; }
-        div[data-testid="stExpander"] details {
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(71, 85, 105, 0.5);
+        }}
+        div[data-testid="stExpander"] details {{
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(15, 82, 186, 0.25);
             border-radius: 10px;
-        }
-        .stButton > button {
-            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%);
-            color: #0f172a !important;
+        }}
+        .stButton > button {{
+            background: linear-gradient(135deg, #0a3d8c 0%, {SAPPHIRE} 55%, #3b7ddd 100%) !important;
+            color: #f8fafc !important;
             font-weight: 700 !important;
             border: none !important;
-            padding: 0.65rem 1.25rem;
-            border-radius: 10px;
-        }
-        .stButton > button:hover { box-shadow: 0 0 24px rgba(34, 211, 238, 0.35); }
-        label { color: #cbd5e1 !important; }
-        footer { visibility: hidden; }
+            padding: 0.65rem 1.35rem;
+            border-radius: 10px !important;
+            box-shadow: 0 4px 14px rgba(15, 82, 186, 0.45);
+        }}
+        .stButton > button:hover {{
+            box-shadow: 0 6px 22px rgba(15, 82, 186, 0.55);
+            filter: brightness(1.06);
+        }}
+        label {{ color: #cbd5e1 !important; }}
+        [data-testid="stSidebar"] {{
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            border-right: 1px solid rgba(15, 82, 186, 0.3);
+        }}
+        footer {{ visibility: hidden; }}
+        .lgpd-badge {{
+            display: inline-block;
+            margin-top: 0.75rem;
+            padding: 0.45rem 0.65rem;
+            background: rgba(15, 82, 186, 0.15);
+            border: 1px solid rgba(15, 82, 186, 0.4);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -133,6 +163,18 @@ def inject_css() -> None:
 
 def only_digits(s: str) -> str:
     return re.sub(r"\D", "", s or "")
+
+
+def format_whatsapp_br(raw: str) -> str:
+    """Formata para exibição (XX) XXXXX-XXXX / (XX) XXXX-XXXX."""
+    d = only_digits(raw)
+    if len(d) < 10:
+        return raw.strip()
+    if len(d) == 10:
+        return f"({d[:2]}) {d[2:6]}-{d[6:]}"
+    if len(d) == 11:
+        return f"({d[:2]}) {d[2:7]}-{d[7:]}"
+    return raw.strip()
 
 
 def call_openai_diagnostico(payload: str) -> dict:
@@ -148,10 +190,7 @@ def call_openai_diagnostico(payload: str) -> dict:
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"Dados para diagnóstico (JSON ou texto):\n{payload}",
-            },
+            {"role": "user", "content": f"Dados para diagnóstico:\n{payload}"},
         ],
     )
     raw = completion.choices[0].message.content or "{}"
@@ -164,45 +203,33 @@ def clamp_score(n: int) -> int:
 
 def normalize_result(data: dict) -> dict:
     scores = data.get("scores") or {}
-    keys = [
-        "presenca_visual",
-        "agilidade_resposta",
-        "seo_local",
-        "autoridade",
-        "uso_tecnologia",
-    ]
-    out_scores = {}
-    for k in keys:
+    out_scores: dict[str, int] = {}
+    for k in SCORE_KEYS:
         v = scores.get(k, 0)
         try:
             out_scores[k] = clamp_score(int(v))
         except (TypeError, ValueError):
             out_scores[k] = 0
     detalhes = data.get("detalhes") or {}
-    out_det = {k: str(detalhes.get(k, "")).strip() for k in keys}
+    out_det = {k: str(detalhes.get(k, "")).strip() for k in SCORE_KEYS}
     return {
         "scores": out_scores,
-        "banho_realidade": str(data.get("banho_realidade", "")).strip(),
-        "plano_modernizacao": str(data.get("plano_modernizacao", "")).strip(),
+        "raio_x_realista": str(data.get("raio_x_realista", "")).strip(),
+        "dica_gestor": str(data.get("dica_gestor", "")).strip(),
+        "oportunidades_iaexpertise": str(data.get("oportunidades_iaexpertise", "")).strip(),
         "detalhes": out_det,
     }
 
 
 def build_radar_figure(scores: dict) -> go.Figure:
     labels_pt = {
-        "presenca_visual": "Presença Visual",
-        "agilidade_resposta": "Agilidade de Resposta",
+        "atendimento": "Atendimento",
+        "visual": "Visual",
         "seo_local": "SEO Local",
+        "tecnologia": "Tecnologia",
         "autoridade": "Autoridade",
-        "uso_tecnologia": "Uso de Tecnologia",
     }
-    order = [
-        "presenca_visual",
-        "agilidade_resposta",
-        "seo_local",
-        "autoridade",
-        "uso_tecnologia",
-    ]
+    order = SCORE_KEYS
     theta = [labels_pt[k] for k in order] + [labels_pt[order[0]]]
     r = [scores[k] for k in order] + [scores[order[0]]]
 
@@ -212,8 +239,8 @@ def build_radar_figure(scores: dict) -> go.Figure:
             r=r,
             theta=theta,
             fill="toself",
-            fillcolor="rgba(34, 211, 238, 0.28)",
-            line=dict(color="#22d3ee", width=2),
+            fillcolor="rgba(15, 82, 186, 0.35)",
+            line=dict(color=SAPPHIRE, width=2),
             name="Maturidade",
         )
     )
@@ -224,11 +251,11 @@ def build_radar_figure(scores: dict) -> go.Figure:
                 range=[0, 10],
                 tickvals=[0, 2, 4, 6, 8, 10],
                 tickfont=dict(color="#94a3b8", size=11),
-                gridcolor="rgba(148, 163, 184, 0.25)",
+                gridcolor="rgba(15, 82, 186, 0.2)",
             ),
             angularaxis=dict(
                 tickfont=dict(color="#e2e8f0", size=12),
-                linecolor="rgba(148, 163, 184, 0.35)",
+                linecolor="rgba(15, 82, 186, 0.35)",
             ),
             bgcolor="rgba(15, 23, 42, 0.5)",
         ),
@@ -237,7 +264,7 @@ def build_radar_figure(scores: dict) -> go.Figure:
         plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(t=48, b=32, l=48, r=48),
         title=dict(
-            text="Mapa de Maturidade Digital (0–10)",
+            text="Mapa de maturidade (0–10)",
             font=dict(size=18, color="#f1f5f9"),
             x=0.5,
             xanchor="center",
@@ -253,7 +280,14 @@ def build_notification_bodies(
     result: dict,
     ts: str,
 ) -> tuple[str, str]:
-    """Retorna (texto plano, HTML) para o e-mail de notificação."""
+    esc = html.escape
+    label_scores = [
+        ("atendimento", "Atendimento"),
+        ("visual", "Visual"),
+        ("seo_local", "SEO local"),
+        ("tecnologia", "Tecnologia"),
+        ("autoridade", "Autoridade"),
+    ]
     lines = [
         "Novo diagnóstico — Bússola Inteligente / IAExpertise",
         "",
@@ -263,27 +297,30 @@ def build_notification_bodies(
         f"Site: {lead.get('site', '')}",
         f"Segmento: {lead.get('segmento', '')}",
         f"Instagram: {lead.get('instagram', '')}",
-        f"WhatsApp (lead): {lead.get('whatsapp', '')}",
-        f"E-mail (lead): {lead.get('email_cliente', '')}",
-        f"Opt-in contato: {lead.get('optin', '')}",
-        f"Maior dor: {lead.get('dor', '')}",
+        f"WhatsApp: {lead.get('whatsapp', '')}",
+        f"E-mail: {lead.get('email_cliente', '')}",
+        f"Opt-in: {lead.get('optin', '')}",
+        f"Dor (Sebrae): {lead.get('dor', '')}",
         "",
-        "Notas (0–10):",
-        f"  Presença visual: {scores.get('presenca_visual', '')}",
-        f"  Agilidade de resposta: {scores.get('agilidade_resposta', '')}",
-        f"  SEO local: {scores.get('seo_local', '')}",
-        f"  Autoridade: {scores.get('autoridade', '')}",
-        f"  Uso de tecnologia: {scores.get('uso_tecnologia', '')}",
-        "",
-        "--- O banho de realidade ---",
-        result.get("banho_realidade", ""),
-        "",
-        "--- Plano de modernização ---",
-        result.get("plano_modernizacao", ""),
+        "Notas:",
     ]
+    for k, lab in label_scores:
+        lines.append(f"  {lab}: {scores.get(k, '')}")
+    lines.extend(
+        [
+            "",
+            "--- Raio-X realista ---",
+            result.get("raio_x_realista", ""),
+            "",
+            "--- Dica de gestor ---",
+            result.get("dica_gestor", ""),
+            "",
+            "--- Oportunidades IAExpertise ---",
+            result.get("oportunidades_iaexpertise", ""),
+        ]
+    )
     text_body = "\n".join(lines)
 
-    esc = html.escape
     rows_html = "".join(
         f"<tr><td style='padding:6px 12px;border:1px solid #334155;color:#94a3b8'>{esc(k)}</td>"
         f"<td style='padding:6px 12px;border:1px solid #334155;color:#f1f5f9'>{esc(str(v))}</td></tr>"
@@ -296,34 +333,28 @@ def build_notification_bodies(
             ("Instagram", lead.get("instagram", "")),
             ("WhatsApp", lead.get("whatsapp", "")),
             ("E-mail", lead.get("email_cliente", "")),
-            ("Opt-in contato", lead.get("optin", "")),
-            ("Maior dor", lead.get("dor", "")),
+            ("Opt-in", lead.get("optin", "")),
+            ("Dor (Sebrae)", lead.get("dor", "")),
         ]
     )
     scores_rows = "".join(
-        f"<tr><td style='padding:6px 12px;border:1px solid #334155'>{esc(l)}</td>"
+        f"<tr><td style='padding:6px 12px;border:1px solid #334155'>{esc(lab)}</td>"
         f"<td style='padding:6px 12px;border:1px solid #334155'><strong>{scores.get(k, '')}</strong>/10</td></tr>"
-        for k, l in [
-            ("presenca_visual", "Presença visual"),
-            ("agilidade_resposta", "Agilidade de resposta"),
-            ("seo_local", "SEO local"),
-            ("autoridade", "Autoridade"),
-            ("uso_tecnologia", "Uso de tecnologia"),
-        ]
+        for k, lab in label_scores
     )
     html_body = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>
 <body style="font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:24px;">
-  <h1 style="color:#22d3ee;font-size:1.25rem;">Novo diagnóstico — Bússola Inteligente</h1>
+  <h1 style="color:{SAPPHIRE};font-size:1.25rem;">Novo diagnóstico — Bússola Inteligente</h1>
   <table style="border-collapse:collapse;margin:16px 0;width:100%;max-width:560px;">{rows_html}</table>
   <h2 style="color:#94a3b8;font-size:0.95rem;">Notas</h2>
   <table style="border-collapse:collapse;margin-bottom:24px;width:100%;max-width:560px;">{scores_rows}</table>
-  <h2 style="color:#94a3b8;font-size:0.95rem;">O banho de realidade</h2>
-  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:20px;
-    white-space:pre-wrap;">{esc(result.get("banho_realidade", ""))}</div>
-  <h2 style="color:#94a3b8;font-size:0.95rem;">Plano de modernização</h2>
-  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;white-space:pre-wrap;">
-    {esc(result.get("plano_modernizacao", ""))}</div>
+  <h2 style="color:#94a3b8;font-size:0.95rem;">Raio-X realista</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap;">{esc(result.get("raio_x_realista", ""))}</div>
+  <h2 style="color:#94a3b8;font-size:0.95rem;">Dica de gestor</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap;">{esc(result.get("dica_gestor", ""))}</div>
+  <h2 style="color:#94a3b8;font-size:0.95rem;">Oportunidades IAExpertise</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;white-space:pre-wrap;">{esc(result.get("oportunidades_iaexpertise", ""))}</div>
 </body></html>"""
     return text_body, html_body
 
@@ -334,14 +365,6 @@ def send_agentmail_notification(
     result: dict,
     ts: str,
 ) -> tuple[bool, str | None]:
-    """
-    Envia cópia do diagnóstico a partir de AGENTMAIL_INBOX (ex.: bussola.inteligente@agentmail.to)
-    para AGENTMAIL_NOTIFY_TO via AgentMail.
-
-    Usa o inbox já existente (ID = endereço completo). Não chama inboxes.create por envio,
-    para evitar LimitExceededError no plano gratuito.
-    Retorna (ok, mensagem_erro).
-    """
     api_key = os.getenv("AGENTMAIL_API_KEY")
     if not api_key:
         return False, "AGENTMAIL_API_KEY ausente"
@@ -356,7 +379,7 @@ def send_agentmail_notification(
     subject = f"[Bússola] Novo diagnóstico — {empresa}"
     inbox_id = (AGENTMAIL_INBOX or "").strip()
     if not inbox_id or "@" not in inbox_id:
-        return False, "AGENTMAIL_INBOX inválido (ex.: bussola.inteligente@agentmail.to)"
+        return False, "AGENTMAIL_INBOX inválido"
 
     try:
         client = AgentMail(api_key=api_key)
@@ -383,14 +406,15 @@ def save_lead_csv(row: dict) -> None:
         "whatsapp",
         "email_cliente",
         "optin_autorizado",
-        "dor",
-        "presenca_visual",
-        "agilidade_resposta",
+        "dor_sebrae",
+        "atendimento",
+        "visual",
         "seo_local",
+        "tecnologia",
         "autoridade",
-        "uso_tecnologia",
-        "banho_realidade",
-        "plano_modernizacao",
+        "raio_x_realista",
+        "dica_gestor",
+        "oportunidades_iaexpertise",
         "diagnostico_json",
     ]
     file_exists = LEADS_CSV.is_file()
@@ -401,182 +425,291 @@ def save_lead_csv(row: dict) -> None:
         w.writerow(row)
 
 
-def main() -> None:
-    st.set_page_config(
-        page_title="Diagnóstico de Maturidade Digital | IAExpertise",
-        page_icon="◆",
-        layout="wide",
-        initial_sidebar_state="collapsed",
-    )
-    inject_css()
+def init_session() -> None:
+    if "etapa" not in st.session_state:
+        st.session_state.etapa = "landing"
+    if "lead_snap" not in st.session_state:
+        st.session_state.lead_snap = {}
+    if "diagnostico_result" not in st.session_state:
+        st.session_state.diagnostico_result = None
+    if "lead_persistido" not in st.session_state:
+        st.session_state.lead_persistido = False
 
+
+def reset_para_landing() -> None:
+    st.session_state.etapa = "landing"
+    st.session_state.lead_snap = {}
+    st.session_state.diagnostico_result = None
+    st.session_state.lead_persistido = False
+
+
+def render_sidebar() -> None:
+    with st.sidebar:
+        if PROFILE_IMAGE.is_file():
+            st.image(str(PROFILE_IMAGE), use_container_width=True)
+        else:
+            st.caption("Coloque a foto em `assets/perfil.jpg`")
+            st.markdown(f"<div style='height:120px;background:#1e293b;border-radius:10px;border:1px dashed {SAPPHIRE};display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.85rem;'>Foto</div>", unsafe_allow_html=True)
+
+        st.markdown("**Eduardo Sona**")
+        st.caption("Arquiteto de Soluções")
+        st.markdown(
+            f'<a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" rel="noopener" '
+            f'style="color:{SAPPHIRE};font-weight:600;">IAExpertise no LinkedIn →</a>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<p class="lgpd-badge">🔒 Dados protegidos (LGPD)</p>',
+            unsafe_allow_html=True,
+        )
+        st.divider()
+        if st.button("🏠 Início", use_container_width=True):
+            reset_para_landing()
+            st.rerun()
+
+
+def render_landing() -> None:
+    st.markdown('<p class="tagline-saph">IAExpertise</p>', unsafe_allow_html=True)
+    st.markdown("# Bússola Inteligente 🧭")
     st.markdown(
-        '<p class="tagline">IAExpertise · Bússola Inteligente</p>',
+        '<p class="hero-sub">O mapa para tirar sua empresa do invisível e colocar no lucro.</p>',
         unsafe_allow_html=True,
     )
-    st.markdown("# Diagnóstico de Maturidade Digital")
+
+    _, c_mid, _ = st.columns([1, 8, 1])
+    with c_mid:
+        try:
+            st.video(YOUTUBE_VIDEO_URL)
+        except Exception:
+            st.info("Configure a URL do vídeo em `YOUTUBE_VIDEO_URL` (Secrets).")
+            st.markdown(f"[Abrir vídeo no YouTube]({YOUTUBE_VIDEO_URL})")
+
     st.markdown(
-        '<p class="hero-sub">Análise honesta da sua presença digital — com plano prático e soluções com IA '
-        "(Lia, conteúdo e vídeos).</p>",
+        '<div class="card-saph" style="text-align:center;margin-top:1rem;">'
+        "Análise baseada em dados públicos e nas <strong>5 maiores dores do MEI (Sebrae)</strong>. "
+        "Sem pedidos de senha ou dados sensíveis.</div>",
         unsafe_allow_html=True,
     )
 
-    with st.form("lead_form"):
+    if st.button("Quero analisar meu negócio", type="primary", use_container_width=True):
+        st.session_state.etapa = "formulario"
+        st.rerun()
+
+
+def render_formulario() -> None:
+    st.markdown("## Consultoria Gratuita IAExpertise")
+    st.caption("Preencha com o que puder — quanto mais contexto, melhor o diagnóstico.")
+
+    with st.form("form_diagnostico"):
         c1, c2 = st.columns(2)
         with c1:
             nome = st.text_input("Nome do contato", placeholder="Maria Silva")
-            empresa = st.text_input("Empresa", placeholder="Padaria do Centro Ltda")
-            site = st.text_input("Site (URL ou deixe em branco)", placeholder="https://...")
+            empresa = st.text_input("Nome da empresa *", placeholder="Sua loja MEI")
+            segmento = st.text_input("Segmento", placeholder="Alimentação, serviços…")
         with c2:
-            segmento = st.text_input("Segmento", placeholder="Alimentação, serviços, varejo...")
-            instagram = st.text_input("Instagram (@)", placeholder="@suaempresa")
-            whatsapp_in = st.text_input("WhatsApp com DDD", placeholder="(11) 99999-9999")
+            site = st.text_input("Site (URL ou vazio)", placeholder="https://…")
+            instagram = st.text_input("Instagram", placeholder="@minhaloja")
+            whatsapp_in = st.text_input(
+                "WhatsApp (com DDD)",
+                placeholder="(11) 99999-9999",
+                help="Apenas números ou com máscara; salvamos o formato brasileiro.",
+            )
 
         email_cliente = st.text_input(
             "E-mail do contato",
             placeholder="nome@empresa.com.br",
-            help="Para registro do lead. Obrigatório se você marcar a autorização abaixo.",
+            help="Obrigatório se marcar o opt-in abaixo.",
         )
         optin = st.checkbox(
-            "Autorizo a IAExpertise a me contatar por e-mail e WhatsApp sobre este diagnóstico, "
-            "soluções de IA e presença digital. Sei que posso retirar essa autorização quando quiser (opt-in).",
+            "Autorizo a IAExpertise a me contatar por e-mail e WhatsApp sobre este diagnóstico e soluções de IA/presença digital. Posso retirar a autorização quando quiser (opt-in).",
             value=False,
         )
 
-        dor = st.radio(
-            "Qual sua maior dor hoje?",
-            options=[
-                "Atendimento",
-                "Criar Conteúdo",
-                "Ser encontrado no Google",
-            ],
-            horizontal=True,
+        dor = st.selectbox(
+            "Qual o maior desafio hoje? (referência Sebrae)",
+            options=DOR_SEBRAE_OPCOES,
+            index=4,
         )
-        submitted = st.form_submit_button("Gerar diagnóstico com IA")
+
+        submitted = st.form_submit_button("Gerar diagnóstico em 60s")
 
     if not submitted:
-        st.markdown(
-            '<div class="card">Preencha os dados e clique em <strong>Gerar diagnóstico com IA</strong>. '
-            "O relatório inclui gráfico de radar, análise crítica e próximos passos com a IAExpertise.</div>",
-            unsafe_allow_html=True,
-        )
         return
 
-    if not empresa.strip():
-        st.error("Informe pelo menos o nome da empresa.")
+    if not (empresa or "").strip():
+        st.error("Informe o nome da empresa.")
         return
 
-    email_stripped = email_cliente.strip()
+    email_stripped = (email_cliente or "").strip()
     if optin and not email_stripped:
         st.error("Para registrar o opt-in, informe seu e-mail.")
         return
 
+    wa_digits = only_digits(whatsapp_in)
+    wa_display = format_whatsapp_br(whatsapp_in) if wa_digits else ""
+
     user_payload = {
-        "nome": nome.strip(),
+        "nome": (nome or "").strip(),
         "empresa": empresa.strip(),
-        "site": site.strip(),
-        "segmento": segmento.strip(),
-        "instagram": instagram.strip(),
-        "whatsapp": whatsapp_in.strip(),
-        "dor_principal": dor,
+        "site": (site or "").strip(),
+        "segmento": (segmento or "").strip(),
+        "instagram": (instagram or "").strip(),
+        "whatsapp": wa_display or whatsapp_in.strip(),
+        "dor_sebrae": dor,
         "email_cliente": email_stripped,
         "optin_contato": optin,
     }
 
-    with st.spinner("Analisando presença digital e montando seu relatório..."):
+    with st.spinner("Gerando diagnóstico com IA…"):
         try:
             raw = call_openai_diagnostico(json.dumps(user_payload, ensure_ascii=False))
             result = normalize_result(raw)
         except json.JSONDecodeError as e:
-            st.error(f"Resposta da IA em formato inválido: {e}")
+            st.error(f"Resposta da IA inválida: {e}")
             return
         except Exception as e:
             st.error(str(e))
             return
 
-    scores = result["scores"]
-    fig = build_radar_figure(scores)
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader("A) O banho de realidade")
-    _br = html.escape(result["banho_realidade"]).replace("\n", "<br/>")
-    st.markdown(f'<div class="card">{_br}</div>', unsafe_allow_html=True)
-
-    st.subheader("B) Plano de modernização (IAExpertise)")
-    _br2 = html.escape(result["plano_modernizacao"]).replace("\n", "<br/>")
-    st.markdown(f'<div class="card">{_br2}</div>', unsafe_allow_html=True)
-
-    st.subheader("Detalhes por dimensão")
-    label_exp = {
-        "presenca_visual": "Presença Visual",
-        "agilidade_resposta": "Agilidade de Resposta",
-        "seo_local": "SEO Local",
-        "autoridade": "Autoridade",
-        "uso_tecnologia": "Uso de Tecnologia",
-    }
-    for key, title in label_exp.items():
-        with st.expander(f"{title} — nota {scores[key]}/10"):
-            st.write(result["detalhes"].get(key, "Sem detalhe adicional."))
-
-    # Persistência
-    ts = datetime.now().isoformat(timespec="seconds")
-    diag_json = json.dumps(
-        {"scores": scores, **{k: result[k] for k in ("banho_realidade", "plano_modernizacao", "detalhes")}},
-        ensure_ascii=False,
-    )
-    lead_row = {
-        "timestamp_iso": ts,
-        "nome": nome.strip(),
+    st.session_state.lead_snap = {
+        "nome": (nome or "").strip(),
         "empresa": empresa.strip(),
-        "site": site.strip(),
-        "segmento": segmento.strip(),
-        "instagram": instagram.strip(),
-        "whatsapp": whatsapp_in.strip(),
-        "email_cliente": email_stripped,
-        "optin_autorizado": "sim" if optin else "nao",
-        "dor": dor,
-        **{k: scores[k] for k in scores},
-        "banho_realidade": result["banho_realidade"],
-        "plano_modernizacao": result["plano_modernizacao"],
-        "diagnostico_json": diag_json,
-    }
-    save_lead_csv(lead_row)
-    st.success(f"Lead salvo em `{LEADS_CSV.name}` para sua análise posterior.")
-
-    lead_for_mail = {
-        "nome": nome.strip(),
-        "empresa": empresa.strip(),
-        "site": site.strip(),
-        "segmento": segmento.strip(),
-        "instagram": instagram.strip(),
-        "whatsapp": whatsapp_in.strip(),
+        "site": (site or "").strip(),
+        "segmento": (segmento or "").strip(),
+        "instagram": (instagram or "").strip(),
+        "whatsapp": wa_display or whatsapp_in.strip(),
+        "whatsapp_digits": wa_digits,
         "email_cliente": email_stripped,
         "optin": "sim" if optin else "nao",
         "dor": dor,
     }
-    ok_mail, err_mail = send_agentmail_notification(lead_for_mail, scores, result, ts)
-    if ok_mail:
-        st.info(
-            f"Notificação enviada de **{AGENTMAIL_INBOX}** para **{AGENTMAIL_NOTIFY_TO}** (AgentMail)."
-        )
-    else:
-        st.warning(
-            f"E-mail de notificação não enviado: {err_mail}. "
-            "Confira `AGENTMAIL_API_KEY`, o inbox no console AgentMail e variáveis `AGENTMAIL_INBOX` / `AGENTMAIL_NOTIFY_TO`."
-        )
+    st.session_state.diagnostico_result = result
+    st.session_state.lead_persistido = False
+    st.session_state.etapa = "relatorio"
+    st.rerun()
 
-    # CTA WhatsApp
-    nome_cta = nome.strip() or "Cliente"
-    empresa_cta = empresa.strip()
+
+def render_relatorio() -> None:
+    result = st.session_state.diagnostico_result
+    lead = st.session_state.lead_snap
+    if not result or not lead:
+        st.warning("Nada para exibir. Volte ao início.")
+        return
+
+    scores = result["scores"]
+    fig = build_radar_figure(scores)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("1) Raio-X realista")
+    rx = html.escape(result["raio_x_realista"]).replace("\n", "<br/>")
+    st.markdown(f'<div class="card-saph">{rx}</div>', unsafe_allow_html=True)
+
+    st.subheader("2) Dica de gestor")
+    dg = html.escape(result["dica_gestor"]).replace("\n", "<br/>")
+    st.markdown(f'<div class="card-saph">{dg}</div>', unsafe_allow_html=True)
+
+    st.subheader("3) Oportunidades IAExpertise")
+    op = html.escape(result["oportunidades_iaexpertise"]).replace("\n", "<br/>")
+    st.markdown(f'<div class="card-saph">{op}</div>', unsafe_allow_html=True)
+
+    labels = {
+        "atendimento": "Atendimento",
+        "visual": "Visual",
+        "seo_local": "SEO Local",
+        "tecnologia": "Tecnologia",
+        "autoridade": "Autoridade",
+    }
+    st.subheader("Detalhes por eixo")
+    for k, title in labels.items():
+        with st.expander(f"{title} — {scores[k]}/10"):
+            st.write(result["detalhes"].get(k, "—"))
+
+    ts = datetime.now().isoformat(timespec="seconds")
+
+    if not st.session_state.lead_persistido:
+        diag_json = json.dumps(
+            {"scores": scores, **{x: result[x] for x in ("raio_x_realista", "dica_gestor", "oportunidades_iaexpertise", "detalhes")}},
+            ensure_ascii=False,
+        )
+        row = {
+            "timestamp_iso": ts,
+            "nome": lead.get("nome", ""),
+            "empresa": lead.get("empresa", ""),
+            "site": lead.get("site", ""),
+            "segmento": lead.get("segmento", ""),
+            "instagram": lead.get("instagram", ""),
+            "whatsapp": lead.get("whatsapp", ""),
+            "email_cliente": lead.get("email_cliente", ""),
+            "optin_autorizado": lead.get("optin", "nao"),
+            "dor_sebrae": lead.get("dor", ""),
+            **{k: scores[k] for k in SCORE_KEYS},
+            "raio_x_realista": result["raio_x_realista"],
+            "dica_gestor": result["dica_gestor"],
+            "oportunidades_iaexpertise": result["oportunidades_iaexpertise"],
+            "diagnostico_json": diag_json,
+        }
+        save_lead_csv(row)
+        st.session_state.lead_persistido = True
+        st.success(f"Lead registrado em `{LEADS_CSV.name}`.")
+
+        lead_mail = {
+            "nome": lead.get("nome", ""),
+            "empresa": lead.get("empresa", ""),
+            "site": lead.get("site", ""),
+            "segmento": lead.get("segmento", ""),
+            "instagram": lead.get("instagram", ""),
+            "whatsapp": lead.get("whatsapp", ""),
+            "email_cliente": lead.get("email_cliente", ""),
+            "optin": lead.get("optin", "nao"),
+            "dor": lead.get("dor", ""),
+        }
+        ok_mail, err_mail = send_agentmail_notification(lead_mail, scores, result, ts)
+        if ok_mail:
+            st.info(
+                f"Notificação enviada de **{AGENTMAIL_INBOX}** para **{AGENTMAIL_NOTIFY_TO}**."
+            )
+        else:
+            st.warning(f"E-mail interno não enviado: {err_mail}")
+
+    nome_cta = lead.get("nome") or "Cliente"
+    empresa_cta = lead.get("empresa") or "minha empresa"
     msg = (
         f"Olá Eduardo! Sou {nome_cta} ({empresa_cta}). "
-        f"Quero falar sobre o diagnóstico de maturidade digital e as soluções Lia / IAExpertise."
+        f"Quero falar sobre o diagnóstico Bússola Inteligente e as soluções Lia / IAExpertise."
     )
     phone = only_digits(WHATSAPP_ARQUITETO)
-    if len(phone) < 10:
-        st.warning("Configure WHATSAPP_ARQUITETO com DDI+DDD+número (só dígitos) para o link funcionar.")
     wa_url = f"https://wa.me/{phone}?text={urllib.parse.quote(msg)}"
-    st.link_button("Falar com o Arquiteto Eduardo Sona", wa_url, use_container_width=True)
+    if len(phone) < 10:
+        st.warning("Configure WHATSAPP_ARQUITETO (DDI+DDD+número, só dígitos).")
+    st.link_button("Falar com o Arquiteto no WhatsApp", wa_url, use_container_width=True)
+
+    if st.button("Nova análise", use_container_width=True):
+        reset_para_landing()
+        st.rerun()
+
+
+def main() -> None:
+    st.set_page_config(
+        page_title="Bússola Inteligente | IAExpertise",
+        page_icon="🧭",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    init_session()
+    inject_css()
+    render_sidebar()
+
+    etapa = st.session_state.etapa
+
+    if etapa == "landing":
+        render_landing()
+    elif etapa == "formulario":
+        render_formulario()
+    elif etapa == "relatorio":
+        render_relatorio()
+    else:
+        st.session_state.etapa = "landing"
+        st.rerun()
 
 
 if __name__ == "__main__":
