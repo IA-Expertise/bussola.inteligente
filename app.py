@@ -355,7 +355,6 @@ def send_agentmail_notification(
     try:
         client = AgentMail(api_key=api_key)
         inbox = client.inboxes.create(
-            client_id=AGENTMAIL_INBOX_CLIENT_ID,
             username=username,
             domain=domain,
         )
