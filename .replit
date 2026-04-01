@@ -1,5 +1,6 @@
-# Replit — importe este repo e clique em Run (instale deps na primeira vez se pedir).
-run = "streamlit run app.py --server.port=5000 --server.address=0.0.0.0 --server.headless=true"
+# Bússola Inteligente — Streamlit (Python)
+language = "python3"
+run = "pip install -q -r requirements.txt && streamlit run app.py --server.port=5000 --server.address=0.0.0.0 --server.headless=true"
 
 entrypoint = "app.py"
 
