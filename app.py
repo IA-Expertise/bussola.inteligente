@@ -27,8 +27,6 @@ load_dotenv()
 WHATSAPP_ARQUITETO = os.getenv("WHATSAPP_ARQUITETO", "5511999999999")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 LEADS_CSV = Path(__file__).resolve().parent / "leads.csv"
-ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-PROFILE_IMAGE = ASSETS_DIR / "perfil.jpg"
 
 AGENTMAIL_INBOX = os.getenv("AGENTMAIL_INBOX", "bussola.inteligente@agentmail.to")
 AGENTMAIL_NOTIFY_TO = os.getenv("AGENTMAIL_NOTIFY_TO", "contato@iaexpertise.com.br")
@@ -45,6 +43,19 @@ YOUTUBE_VIDEO_URL = os.getenv(
 )
 
 SAPPHIRE = "#0F52BA"
+
+LANDING_EXPLAIN_HTML = """
+<p style="margin:0 0 1rem 0;line-height:1.65;color:#cbd5e1;">
+Muitas empresas são excelentes no que fazem, mas invisíveis para quem quer comprar.
+A <strong style="color:#f1f5f9;">Bússola Inteligente</strong> utiliza Inteligência Artificial para auditar sua vitrine digital
+e identificar exatamente onde você está perdendo clientes.
+</p>
+<p style="margin:0;line-height:1.65;color:#cbd5e1;">
+A análise se baseia nas <strong>5 maiores dores do microempreendedor brasileiro</strong> de acordo com as pesquisas de entidades como
+Sebrae, FGV, Google e outras. Nosso diagnóstico é <strong>100% gratuito</strong>, seguro e focado em &quot;ajeitar a sua casa&quot;
+para você faturar mais. Não pedimos senhas ou dados sigilosos, apenas analisamos como o mercado enxerga o seu negócio hoje.
+</p>
+"""
 
 DOR_SEBRAE_OPCOES = [
     "Falta de controle financeiro",
@@ -140,14 +151,47 @@ def inject_css() -> None:
             filter: brightness(1.06);
         }}
         label {{ color: #cbd5e1 !important; }}
+        section[data-testid="stSidebar"],
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-            border-right: 1px solid rgba(15, 82, 186, 0.3);
+            display: none !important;
+        }}
+        [data-testid="collapsedControl"] {{
+            display: none !important;
+        }}
+        .block-container {{
+            padding-top: 2rem !important;
+            max-width: 1100px !important;
         }}
         footer {{ visibility: hidden; }}
+        .site-footer {{
+            margin-top: 3rem;
+            padding: 1.75rem 1.25rem 2rem;
+            border-top: 1px solid rgba(15, 82, 186, 0.35);
+            text-align: center;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.85) 100%);
+            border-radius: 14px 14px 0 0;
+        }}
+        .site-footer .brand {{
+            color: {SAPPHIRE};
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
+        }}
+        .site-footer .author {{
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            margin: 0.5rem 0;
+        }}
+        .site-footer a {{
+            color: {SAPPHIRE};
+            font-weight: 600;
+            text-decoration: none;
+        }}
+        .site-footer a:hover {{ text-decoration: underline; }}
         .lgpd-badge {{
             display: inline-block;
-            margin-top: 0.75rem;
+            margin-top: 0.85rem;
             padding: 0.45rem 0.65rem;
             background: rgba(15, 82, 186, 0.15);
             border: 1px solid rgba(15, 82, 186, 0.4);
@@ -443,29 +487,18 @@ def reset_para_landing() -> None:
     st.session_state.lead_persistido = False
 
 
-def render_sidebar() -> None:
-    with st.sidebar:
-        if PROFILE_IMAGE.is_file():
-            st.image(str(PROFILE_IMAGE), use_container_width=True)
-        else:
-            st.caption("Coloque a foto em `assets/perfil.jpg`")
-            st.markdown(f"<div style='height:120px;background:#1e293b;border-radius:10px;border:1px dashed {SAPPHIRE};display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.85rem;'>Foto</div>", unsafe_allow_html=True)
-
-        st.markdown("**Eduardo Sona**")
-        st.caption("Arquiteto de Soluções")
-        st.markdown(
-            f'<a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" rel="noopener" '
-            f'style="color:{SAPPHIRE};font-weight:600;">IAExpertise no LinkedIn →</a>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            '<p class="lgpd-badge">🔒 Dados protegidos (LGPD)</p>',
-            unsafe_allow_html=True,
-        )
-        st.divider()
-        if st.button("🏠 Início", use_container_width=True):
-            reset_para_landing()
-            st.rerun()
+def render_footer() -> None:
+    st.markdown(
+        f"""
+<div class="site-footer">
+  <div class="brand">IAExpertise</div>
+  <p class="author">Eduardo Augusto Sona — Jornalista e Especialista em IA</p>
+  <p><a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" rel="noopener">IAExpertise no LinkedIn</a></p>
+  <p class="lgpd-badge">🔒 Dados protegidos (LGPD)</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def render_landing() -> None:
@@ -485,9 +518,9 @@ def render_landing() -> None:
             st.markdown(f"[Abrir vídeo no YouTube]({YOUTUBE_VIDEO_URL})")
 
     st.markdown(
-        '<div class="card-saph" style="text-align:center;margin-top:1rem;">'
-        "Análise baseada em dados públicos e nas <strong>5 maiores dores do MEI (Sebrae)</strong>. "
-        "Sem pedidos de senha ou dados sensíveis.</div>",
+        '<div class="card-saph" style="margin-top:1.25rem;">'
+        + LANDING_EXPLAIN_HTML
+        + "</div>",
         unsafe_allow_html=True,
     )
 
@@ -497,6 +530,11 @@ def render_landing() -> None:
 
 
 def render_formulario() -> None:
+    c1, c2 = st.columns([1, 5])
+    with c1:
+        if st.button("← Início"):
+            reset_para_landing()
+            st.rerun()
     st.markdown("## Consultoria Gratuita IAExpertise")
     st.caption("Preencha com o que puder — quanto mais contexto, melhor o diagnóstico.")
 
@@ -594,7 +632,16 @@ def render_relatorio() -> None:
     lead = st.session_state.lead_snap
     if not result or not lead:
         st.warning("Nada para exibir. Volte ao início.")
+        if st.button("← Início"):
+            reset_para_landing()
+            st.rerun()
         return
+
+    r1, _ = st.columns([1, 5])
+    with r1:
+        if st.button("← Início", key="inicio_rel"):
+            reset_para_landing()
+            st.rerun()
 
     scores = result["scores"]
     fig = build_radar_figure(scores)
@@ -693,11 +740,10 @@ def main() -> None:
         page_title="Bússola Inteligente | IAExpertise",
         page_icon="🧭",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
     )
     init_session()
     inject_css()
-    render_sidebar()
 
     etapa = st.session_state.etapa
 
@@ -710,6 +756,8 @@ def main() -> None:
     else:
         st.session_state.etapa = "landing"
         st.rerun()
+
+    render_footer()
 
 
 if __name__ == "__main__":
