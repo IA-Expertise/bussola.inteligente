@@ -343,6 +343,7 @@ def send_agentmail_notification(
 
     try:
         from agentmail import AgentMail
+        from agentmail.inboxes.types import CreateInboxRequest
     except ImportError:
         return False, "Pacote 'agentmail' não instalado (pip install agentmail)"
 
@@ -355,8 +356,10 @@ def send_agentmail_notification(
     try:
         client = AgentMail(api_key=api_key)
         inbox = client.inboxes.create(
-            username=username,
-            domain=domain,
+            request=CreateInboxRequest(
+                username=username,
+                domain=domain,
+            )
         )
         client.inboxes.messages.send(
             inbox.inbox_id,
