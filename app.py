@@ -421,8 +421,11 @@ def build_html_report(lead: dict, result: dict, fig: go.Figure) -> str:
     border-bottom: 1px solid rgba(15, 82, 186, 0.45);
     padding-bottom: 1.25rem; margin-bottom: 1.5rem;
   }}
-  .brand {{ color: var(--saph); font-weight: 700; letter-spacing: 0.06em; font-size: 0.8rem; text-transform: uppercase; }}
-  h1 {{ margin: 0.35rem 0 0; font-size: 1.45rem; color: #f8fafc; }}
+  .product-row {{ display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }}
+  .compass {{ font-size: 1.85rem; line-height: 1; }}
+  .product-name {{ font-size: 1.35rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.02em; }}
+  .brand-sub {{ color: var(--saph); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.35rem; }}
+  h1 {{ margin: 0.5rem 0 0; font-size: 1.2rem; color: #cbd5e1; font-weight: 600; }}
   .meta {{ color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; }}
   .meta span {{ display: inline-block; margin-right: 1rem; }}
   .chart-box {{
@@ -442,14 +445,21 @@ def build_html_report(lead: dict, result: dict, fig: go.Figure) -> str:
   @media print {{
     body {{ background: #fff; color: #111; }}
     .blk .body, .det .body {{ border-color: #ccc; background: #f8fafc; }}
-    h1 {{ color: #111; }}
+    h1, .product-name {{ color: #111; }}
+    .brand-sub {{ color: var(--saph); }}
   }}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">IAExpertise · Bússola Inteligente</div>
+    <div class="product-row">
+      <span class="compass" title="Bússola Inteligente" aria-hidden="true">🧭</span>
+      <div>
+        <div class="product-name">Bússola Inteligente</div>
+        <div class="brand-sub">IAExpertise</div>
+      </div>
+    </div>
     <h1>Relatório de maturidade digital</h1>
     <div class="meta">
       <span><strong>Empresa / órgão:</strong> {emp or "—"}</span>
@@ -476,7 +486,7 @@ def build_html_report(lead: dict, result: dict, fig: go.Figure) -> str:
   </section>
 
   <footer>
-    Relatório gerado pela Bússola Inteligente (IAExpertise). Uso de dados públicos e informações fornecidas pelo solicitante.
+    <span aria-hidden="true">🧭</span> Relatório gerado pela <strong>Bússola Inteligente</strong> (IAExpertise). Uso de dados públicos e informações fornecidas pelo solicitante.
     Para salvar em PDF: use Imprimir → Salvar como PDF no navegador.
   </footer>
 </div>
