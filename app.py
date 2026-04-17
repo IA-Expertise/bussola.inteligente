@@ -87,10 +87,14 @@ NOTAS inteiras de 0 a 10:
 - tecnologia — sinais de modernização (site responsivo, ferramentas, automação) quando dedutível pelos dados; não afirme testes técnicos não feitos.
 - autoridade — prova social, avaliações, conteúdo, reputação percebida nos canais citados.
 
-TRÊS textos obrigatórios:
-1) raio_x_realista — "raio-X" crítico da presença digital (sem floreio).
-2) dica_gestor — conselho prático alinhado à DOR SEBRAE escolhida pelo usuário (Sebrae como referência de contexto; não invente estatísticas exatas).
-3) oportunidades_iaexpertise — como Lia (atendimento no WhatsApp) e produção de conteúdo/vídeo com IA ajudam nos pontos citados.
+CINCO blocos obrigatórios de texto (além de detalhes por eixo):
+1) introducao_analitica — TEXTO INTRODUTÓRIO LONGO (3 a 5 parágrafos). Sintetize o cenário da empresa/órgão: visibilidade no digital, coerência entre canais,
+   riscos de invisibilidade ou má impressão ao cidadão/cliente, e oportunidades. Tom profissional, consultivo, sem slogans vazios.
+2) caminhos_recomendados — liste de 4 a 6 caminhos PRIORITÁRIOS que a empresa pode traçar (curto/médio prazo). Use linhas começando com número (1. 2. 3.) ou traço (-).
+   Cada item deve ser acionável e ligado aos dados informados.
+3) raio_x_realista — "raio-X" crítico da presença digital (sem floreio).
+4) dica_gestor — conselho prático alinhado à DOR SEBRAE escolhida pelo usuário (Sebrae como referência de contexto; não invente estatísticas exatas).
+5) oportunidades_iaexpertise — como Lia (atendimento no WhatsApp) e produção de conteúdo/vídeo com IA ajudam nos pontos citados.
 
 Para cada eixo, detalhes[NOME] explica a nota em um parágrafo curto.
 
@@ -103,6 +107,8 @@ RESPONDA APENAS com JSON válido (sem markdown):
     "tecnologia": <int 0-10>,
     "autoridade": <int 0-10>
   },
+  "introducao_analitica": "<texto com vários parágrafos separados por \\n>",
+  "caminhos_recomendados": "<texto com lista numerada ou marcadores>",
   "raio_x_realista": "<texto>",
   "dica_gestor": "<texto>",
   "oportunidades_iaexpertise": "<texto>",
@@ -263,6 +269,8 @@ def normalize_result(data: dict) -> dict:
     out_det = {k: str(detalhes.get(k, "")).strip() for k in SCORE_KEYS}
     return {
         "scores": out_scores,
+        "introducao_analitica": str(data.get("introducao_analitica", "")).strip(),
+        "caminhos_recomendados": str(data.get("caminhos_recomendados", "")).strip(),
         "raio_x_realista": str(data.get("raio_x_realista", "")).strip(),
         "dica_gestor": str(data.get("dica_gestor", "")).strip(),
         "oportunidades_iaexpertise": str(data.get("oportunidades_iaexpertise", "")).strip(),
@@ -364,6 +372,12 @@ def build_notification_bodies(
     lines.extend(
         [
             "",
+            "--- Introdução analítica ---",
+            result.get("introducao_analitica", ""),
+            "",
+            "--- Caminhos recomendados ---",
+            result.get("caminhos_recomendados", ""),
+            "",
             "--- Raio-X realista ---",
             result.get("raio_x_realista", ""),
             "",
@@ -410,6 +424,10 @@ def build_notification_bodies(
   <table style="border-collapse:collapse;margin:16px 0;width:100%;max-width:560px;">{rows_html}</table>
   <h2 style="color:#94a3b8;font-size:0.95rem;">Notas</h2>
   <table style="border-collapse:collapse;margin-bottom:24px;width:100%;max-width:560px;">{scores_rows}</table>
+  <h2 style="color:#94a3b8;font-size:0.95rem;">Introdução analítica</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap;">{esc(result.get("introducao_analitica", ""))}</div>
+  <h2 style="color:#94a3b8;font-size:0.95rem;">Caminhos recomendados</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap;">{esc(result.get("caminhos_recomendados", ""))}</div>
   <h2 style="color:#94a3b8;font-size:0.95rem;">Raio-X realista</h2>
   <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px;white-space:pre-wrap;">{esc(result.get("raio_x_realista", ""))}</div>
   <h2 style="color:#94a3b8;font-size:0.95rem;">Dica de gestor</h2>
@@ -479,6 +497,8 @@ def save_lead_csv(row: dict) -> None:
         "seo_local",
         "tecnologia",
         "autoridade",
+        "introducao_analitica",
+        "caminhos_recomendados",
         "raio_x_realista",
         "dica_gestor",
         "oportunidades_iaexpertise",
@@ -709,15 +729,31 @@ def render_relatorio() -> None:
     fig = build_radar_figure(scores)
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("1) Raio-X realista")
+    st.subheader("1) Visão geral e introdução analítica")
+    ia_txt = (result.get("introducao_analitica") or "").strip()
+    if ia_txt:
+        ia_html = html.escape(ia_txt).replace("\n", "<br/>")
+        st.markdown(f'<div class="card-saph">{ia_html}</div>', unsafe_allow_html=True)
+    else:
+        st.caption("—")
+
+    st.subheader("2) Caminhos recomendados")
+    cam_txt = (result.get("caminhos_recomendados") or "").strip()
+    if cam_txt:
+        cam_html = html.escape(cam_txt).replace("\n", "<br/>")
+        st.markdown(f'<div class="card-saph">{cam_html}</div>', unsafe_allow_html=True)
+    else:
+        st.caption("—")
+
+    st.subheader("3) Raio-X realista")
     rx = html.escape(result["raio_x_realista"]).replace("\n", "<br/>")
     st.markdown(f'<div class="card-saph">{rx}</div>', unsafe_allow_html=True)
 
-    st.subheader("2) Dica de gestor")
+    st.subheader("4) Dica de gestor")
     dg = html.escape(result["dica_gestor"]).replace("\n", "<br/>")
     st.markdown(f'<div class="card-saph">{dg}</div>', unsafe_allow_html=True)
 
-    st.subheader("3) Oportunidades IAExpertise")
+    st.subheader("5) Oportunidades IAExpertise")
     op = html.escape(result["oportunidades_iaexpertise"]).replace("\n", "<br/>")
     st.markdown(f'<div class="card-saph">{op}</div>', unsafe_allow_html=True)
 
@@ -737,7 +773,20 @@ def render_relatorio() -> None:
 
     if not st.session_state.lead_persistido:
         diag_json = json.dumps(
-            {"scores": scores, **{x: result[x] for x in ("raio_x_realista", "dica_gestor", "oportunidades_iaexpertise", "detalhes")}},
+            {
+                "scores": scores,
+                **{
+                    x: result[x]
+                    for x in (
+                        "introducao_analitica",
+                        "caminhos_recomendados",
+                        "raio_x_realista",
+                        "dica_gestor",
+                        "oportunidades_iaexpertise",
+                        "detalhes",
+                    )
+                },
+            },
             ensure_ascii=False,
         )
         row = {
@@ -758,6 +807,8 @@ def render_relatorio() -> None:
             "optin_autorizado": lead.get("optin", "nao"),
             "dor_sebrae": lead.get("dor", ""),
             **{k: scores[k] for k in SCORE_KEYS},
+            "introducao_analitica": result.get("introducao_analitica", ""),
+            "caminhos_recomendados": result.get("caminhos_recomendados", ""),
             "raio_x_realista": result["raio_x_realista"],
             "dica_gestor": result["dica_gestor"],
             "oportunidades_iaexpertise": result["oportunidades_iaexpertise"],
