@@ -51,9 +51,10 @@ A <strong style="color:#f1f5f9;">Bússola Inteligente</strong> utiliza Inteligê
 e identificar exatamente onde você está perdendo clientes.
 </p>
 <p style="margin:0;line-height:1.65;color:#cbd5e1;">
-A análise se baseia nas <strong>5 maiores dores do microempreendedor brasileiro</strong> de acordo com as pesquisas de entidades como
-Sebrae, FGV, Google e outras. Nosso diagnóstico é <strong>100% gratuito</strong>, seguro e focado em &quot;ajeitar a sua casa&quot;
-para você faturar mais. Não pedimos senhas ou dados sigilosos, apenas analisamos como o mercado enxerga o seu negócio hoje.
+A análise se baseia nas <strong>5 maiores dores do microempreendedor brasileiro</strong> e em sinais de <strong>presença digital pública</strong>:
+<strong>Google</strong> (busca e Maps), <strong>Google Meu Negócio</strong>, <strong>site</strong> e <strong>redes sociais</strong> — o que qualquer pessoa vê sem login.
+Nosso diagnóstico é <strong>100% gratuito</strong>, seguro e focado em &quot;ajeitar a sua casa&quot;
+para você faturar mais. Não pedimos senhas ou acesso a contas; apenas o que você informa e o que é publicamente observável.
 </p>
 """
 
@@ -67,20 +68,24 @@ DOR_SEBRAE_OPCOES = [
 
 SCORE_KEYS = ["atendimento", "visual", "seo_local", "tecnologia", "autoridade"]
 
-SYSTEM_PROMPT = """Você é um consultor sênior de presença digital e negócios para microempresas brasileiras.
+SYSTEM_PROMPT = """Você é um consultor sênior de presença digital para microempresas e órgãos no Brasil.
 Use português do Brasil. Seja direto, honesto e útil.
 
-Contexto: as cinco maiores dificuldades frequentemente citadas para MEI/pequenos negócios incluem temas como controle financeiro, informalidade, contratação, captação de clientes e presença digital. O diagnóstico a seguir foca presença digital e canais; quando a "dor" do usuário for finanças ou contratação, reconheça isso na "dica de gestor" sem fingir que o gráfico mede fluxo de caixa ou RH.
+ESCOPO DO DIAGNÓSTICO (presença digital pública):
+Avalie como o negócio ou instituição aparece em Google (busca orgânica e intenção local), Google Meu Negócio / Google Maps,
+site, redes sociais informadas e canais de contato (ex.: WhatsApp). Não invente que acessou contas ou APIs: use apenas o que o usuário descreveu e inferências plausíveis a partir disso.
+
+Contexto Sebrae: quando a "dor" for finanças, contratação etc., trate na "dica de gestor" sem fingir que o gráfico mede fluxo de caixa ou RH.
 
 TAREFA:
-Com base nos dados informados (empresa, segmento, site, redes, WhatsApp, dor Sebrae selecionada), produza um diagnóstico em JSON.
+Com base nos dados informados (empresa, segmento, site, link Google Maps/GMB, termo de busca, Instagram, outras redes opcionais, WhatsApp, dor Sebrae), produza um diagnóstico em JSON.
 
 NOTAS inteiras de 0 a 10:
-- atendimento — agilidade e qualidade aparente de resposta (WhatsApp, canais informados).
-- visual — identidade e consistência visual dedutível.
-- seo_local — ser encontrado no Google / local / GMB.
-- tecnologia — automação, IA, integrações, modernização.
-- autoridade — conteúdo, prova social, reputação percebida.
+- atendimento — clareza e consistência dos canais de contato (WhatsApp, telefone/e-mail se citados), prontidão aparente.
+- visual — consistência de nome, logo e comunicação entre site e redes informadas.
+- seo_local — encontrabilidade no Google: relevância local, Google Meu Negócio/Maps, coerência NAP (nome/endereço/telefone) quando dedutível; termo de busca informado pelo usuário.
+- tecnologia — sinais de modernização (site responsivo, ferramentas, automação) quando dedutível pelos dados; não afirme testes técnicos não feitos.
+- autoridade — prova social, avaliações, conteúdo, reputação percebida nos canais citados.
 
 TRÊS textos obrigatórios:
 1) raio_x_realista — "raio-X" crítico da presença digital (sem floreio).
@@ -268,8 +273,8 @@ def normalize_result(data: dict) -> dict:
 def build_radar_figure(scores: dict) -> go.Figure:
     labels_pt = {
         "atendimento": "Atendimento",
-        "visual": "Visual",
-        "seo_local": "SEO Local",
+        "visual": "Visual / marca",
+        "seo_local": "Google / Local",
         "tecnologia": "Tecnologia",
         "autoridade": "Autoridade",
     }
@@ -327,8 +332,8 @@ def build_notification_bodies(
     esc = html.escape
     label_scores = [
         ("atendimento", "Atendimento"),
-        ("visual", "Visual"),
-        ("seo_local", "SEO local"),
+        ("visual", "Visual / marca"),
+        ("seo_local", "Google / Local"),
         ("tecnologia", "Tecnologia"),
         ("autoridade", "Autoridade"),
     ]
@@ -340,7 +345,13 @@ def build_notification_bodies(
         f"Empresa: {lead.get('empresa', '')}",
         f"Site: {lead.get('site', '')}",
         f"Segmento: {lead.get('segmento', '')}",
+        f"Google Maps / GMB: {lead.get('gmb_maps', '')}",
+        f"Termo Google (busca): {lead.get('termo_google', '')}",
         f"Instagram: {lead.get('instagram', '')}",
+        f"Facebook: {lead.get('facebook', '')}",
+        f"LinkedIn: {lead.get('linkedin', '')}",
+        f"YouTube: {lead.get('youtube', '')}",
+        f"TikTok: {lead.get('tiktok', '')}",
         f"WhatsApp: {lead.get('whatsapp', '')}",
         f"E-mail: {lead.get('email_cliente', '')}",
         f"Opt-in: {lead.get('optin', '')}",
@@ -374,7 +385,13 @@ def build_notification_bodies(
             ("Empresa", lead.get("empresa", "")),
             ("Site", lead.get("site", "")),
             ("Segmento", lead.get("segmento", "")),
+            ("Google Maps / GMB", lead.get("gmb_maps", "")),
+            ("Termo no Google", lead.get("termo_google", "")),
             ("Instagram", lead.get("instagram", "")),
+            ("Facebook", lead.get("facebook", "")),
+            ("LinkedIn", lead.get("linkedin", "")),
+            ("YouTube", lead.get("youtube", "")),
+            ("TikTok", lead.get("tiktok", "")),
             ("WhatsApp", lead.get("whatsapp", "")),
             ("E-mail", lead.get("email_cliente", "")),
             ("Opt-in", lead.get("optin", "")),
@@ -446,7 +463,13 @@ def save_lead_csv(row: dict) -> None:
         "empresa",
         "site",
         "segmento",
+        "gmb_maps",
+        "termo_google",
         "instagram",
+        "facebook",
+        "linkedin",
+        "youtube",
+        "tiktok",
         "whatsapp",
         "email_cliente",
         "optin_autorizado",
@@ -536,22 +559,49 @@ def render_formulario() -> None:
             reset_para_landing()
             st.rerun()
     st.markdown("## Consultoria Gratuita IAExpertise")
-    st.caption("Preencha com o que puder — quanto mais contexto, melhor o diagnóstico.")
+    st.caption(
+        "Foco em presença digital pública: Google (busca e Maps), Google Meu Negócio, site e redes — sem senhas."
+    )
 
     with st.form("form_diagnostico"):
         c1, c2 = st.columns(2)
         with c1:
             nome = st.text_input("Nome do contato", placeholder="Maria Silva")
-            empresa = st.text_input("Nome da empresa *", placeholder="Sua loja MEI")
+            empresa = st.text_input("Nome da empresa ou órgão *", placeholder="Sua loja MEI")
             segmento = st.text_input("Segmento", placeholder="Alimentação, serviços…")
         with c2:
             site = st.text_input("Site (URL ou vazio)", placeholder="https://…")
+            gmb_maps = st.text_input(
+                "Google Maps / Google Meu Negócio",
+                placeholder="Cole o link do seu perfil no Maps ou GMB",
+                help="Abra o Google Maps, encontre seu negócio e copie o link do navegador.",
+            )
+            termo_google = st.text_input(
+                "Como te encontram no Google? (opcional)",
+                placeholder="ex.: padaria centro louveira",
+                help="Palavras que o cliente digitaria na busca para achar você.",
+            )
+
+        st.markdown("**Redes e contato**")
+        c3, c4 = st.columns(2)
+        with c3:
             instagram = st.text_input("Instagram", placeholder="@minhaloja")
+        with c4:
             whatsapp_in = st.text_input(
                 "WhatsApp (com DDD)",
                 placeholder="(11) 99999-9999",
-                help="Apenas números ou com máscara; salvamos o formato brasileiro.",
+                help="Canal oficial de atendimento.",
             )
+
+        with st.expander("Outros canais públicos (opcional)", expanded=False):
+            st.caption("Links ou @ — ajudam a cruzar consistência de marca e autoridade.")
+            fc1, fc2 = st.columns(2)
+            with fc1:
+                facebook = st.text_input("Facebook", placeholder="URL da página ou perfil", key="fb")
+                linkedin_in = st.text_input("LinkedIn", placeholder="URL da página", key="li")
+            with fc2:
+                youtube = st.text_input("YouTube", placeholder="URL do canal", key="yt")
+                tiktok = st.text_input("TikTok", placeholder="@conta", key="tt")
 
         email_cliente = st.text_input(
             "E-mail do contato",
@@ -591,7 +641,13 @@ def render_formulario() -> None:
         "empresa": empresa.strip(),
         "site": (site or "").strip(),
         "segmento": (segmento or "").strip(),
+        "google_maps_ou_gmb_url": (gmb_maps or "").strip(),
+        "termo_busca_google": (termo_google or "").strip(),
         "instagram": (instagram or "").strip(),
+        "facebook": (facebook or "").strip(),
+        "linkedin": (linkedin_in or "").strip(),
+        "youtube": (youtube or "").strip(),
+        "tiktok": (tiktok or "").strip(),
         "whatsapp": wa_display or whatsapp_in.strip(),
         "dor_sebrae": dor,
         "email_cliente": email_stripped,
@@ -614,7 +670,13 @@ def render_formulario() -> None:
         "empresa": empresa.strip(),
         "site": (site or "").strip(),
         "segmento": (segmento or "").strip(),
+        "gmb_maps": (gmb_maps or "").strip(),
+        "termo_google": (termo_google or "").strip(),
         "instagram": (instagram or "").strip(),
+        "facebook": (facebook or "").strip(),
+        "linkedin": (linkedin_in or "").strip(),
+        "youtube": (youtube or "").strip(),
+        "tiktok": (tiktok or "").strip(),
         "whatsapp": wa_display or whatsapp_in.strip(),
         "whatsapp_digits": wa_digits,
         "email_cliente": email_stripped,
@@ -661,8 +723,8 @@ def render_relatorio() -> None:
 
     labels = {
         "atendimento": "Atendimento",
-        "visual": "Visual",
-        "seo_local": "SEO Local",
+        "visual": "Visual / marca",
+        "seo_local": "Google / Local",
         "tecnologia": "Tecnologia",
         "autoridade": "Autoridade",
     }
@@ -684,7 +746,13 @@ def render_relatorio() -> None:
             "empresa": lead.get("empresa", ""),
             "site": lead.get("site", ""),
             "segmento": lead.get("segmento", ""),
+            "gmb_maps": lead.get("gmb_maps", ""),
+            "termo_google": lead.get("termo_google", ""),
             "instagram": lead.get("instagram", ""),
+            "facebook": lead.get("facebook", ""),
+            "linkedin": lead.get("linkedin", ""),
+            "youtube": lead.get("youtube", ""),
+            "tiktok": lead.get("tiktok", ""),
             "whatsapp": lead.get("whatsapp", ""),
             "email_cliente": lead.get("email_cliente", ""),
             "optin_autorizado": lead.get("optin", "nao"),
@@ -704,7 +772,13 @@ def render_relatorio() -> None:
             "empresa": lead.get("empresa", ""),
             "site": lead.get("site", ""),
             "segmento": lead.get("segmento", ""),
+            "gmb_maps": lead.get("gmb_maps", ""),
+            "termo_google": lead.get("termo_google", ""),
             "instagram": lead.get("instagram", ""),
+            "facebook": lead.get("facebook", ""),
+            "linkedin": lead.get("linkedin", ""),
+            "youtube": lead.get("youtube", ""),
+            "tiktok": lead.get("tiktok", ""),
             "whatsapp": lead.get("whatsapp", ""),
             "email_cliente": lead.get("email_cliente", ""),
             "optin": lead.get("optin", "nao"),
