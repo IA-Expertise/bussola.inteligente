@@ -331,6 +331,160 @@ def build_radar_figure(scores: dict) -> go.Figure:
     return fig
 
 
+def safe_report_filename(empresa: str) -> str:
+    raw = re.sub(r"[^\w\s-]", "", (empresa or "").strip(), flags=re.UNICODE)
+    raw = re.sub(r"[-\s]+", "_", raw).strip("_") or "relatorio"
+    return raw[:60]
+
+
+def build_html_report(lead: dict, result: dict, fig: go.Figure) -> str:
+    """HTML autossuficiente com gráfico Plotly (CDN) e textos do diagnóstico."""
+    scores = result["scores"]
+    when = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    try:
+        chart_html = fig.to_html(
+            full_html=False,
+            include_plotlyjs="cdn",
+            config={"displayModeBar": True, "responsive": True},
+            div_id="radar-bussola-export",
+        )
+    except Exception:
+        chart_html = '<p class="note">Gráfico indisponível na exportação. Veja o relatório no app.</p>'
+
+    def esc_br(s: str) -> str:
+        return html.escape(s or "").replace("\n", "<br/>\n")
+
+    sec = (
+        ("introducao_analitica", "1. Visão geral e introdução analítica"),
+        ("caminhos_recomendados", "2. Caminhos recomendados"),
+        ("raio_x_realista", "3. Raio-X realista"),
+        ("dica_gestor", "4. Dica de gestor"),
+        ("oportunidades_iaexpertise", "5. Oportunidades IAExpertise"),
+    )
+    blocos = []
+    for key, title in sec:
+        txt = (result.get(key) or "").strip()
+        if txt:
+            blocos.append(
+                f'<section class="blk"><h2>{html.escape(title)}</h2>'
+                f'<div class="body">{esc_br(txt)}</div></section>'
+            )
+
+    labels_eixo = {
+        "atendimento": "Atendimento",
+        "visual": "Visual / marca",
+        "seo_local": "Google / Local",
+        "tecnologia": "Tecnologia",
+        "autoridade": "Autoridade",
+    }
+    det_parts = []
+    for k, lab in labels_eixo.items():
+        t = (result.get("detalhes") or {}).get(k, "") or ""
+        sc = scores.get(k, 0)
+        det_parts.append(
+            f'<div class="det"><h3>{html.escape(lab)} — {sc}/10</h3>'
+            f'<div class="body">{esc_br(t) if t.strip() else "—"}</div></div>'
+        )
+    det_html = "\n".join(det_parts)
+
+    esc = html.escape
+    emp = esc(lead.get("empresa") or "")
+    nom = esc(lead.get("nome") or "")
+    seg = esc(lead.get("segmento") or "")
+    site = esc(lead.get("site") or "")
+    dor = esc(lead.get("dor") or "")
+
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Bússola Inteligente — {emp}</title>
+<style>
+  :root {{
+    --saph: #0F52BA;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{
+    margin: 0; padding: 2rem 1.25rem 3rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(165deg, #0a0f1a 0%, var(--bg) 50%, #111827 100%);
+    color: var(--text); line-height: 1.55;
+  }}
+  .wrap {{ max-width: 900px; margin: 0 auto; }}
+  header {{
+    border-bottom: 1px solid rgba(15, 82, 186, 0.45);
+    padding-bottom: 1.25rem; margin-bottom: 1.5rem;
+  }}
+  .brand {{ color: var(--saph); font-weight: 700; letter-spacing: 0.06em; font-size: 0.8rem; text-transform: uppercase; }}
+  h1 {{ margin: 0.35rem 0 0; font-size: 1.45rem; color: #f8fafc; }}
+  .meta {{ color: var(--muted); font-size: 0.9rem; margin-top: 0.75rem; }}
+  .meta span {{ display: inline-block; margin-right: 1rem; }}
+  .chart-box {{
+    background: rgba(30, 41, 59, 0.55);
+    border: 1px solid rgba(15, 82, 186, 0.35);
+    border-radius: 14px; padding: 1rem; margin: 1.5rem 0;
+  }}
+  .chart-box h2 {{ margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--muted); font-weight: 600; }}
+  .blk {{ margin: 1.35rem 0; }}
+  .blk h2 {{ font-size: 1.05rem; color: #cbd5e1; margin: 0 0 0.5rem; border-left: 3px solid var(--saph); padding-left: 0.6rem; }}
+  .blk .body, .det .body {{ background: var(--card); border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px; padding: 1rem; font-size: 0.95rem; }}
+  .det {{ margin: 1rem 0; }}
+  .det h3 {{ font-size: 0.95rem; color: #cbd5e1; margin: 0 0 0.4rem; }}
+  footer {{ margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid rgba(15, 82, 186, 0.25);
+    font-size: 0.8rem; color: var(--muted); text-align: center; }}
+  @media print {{
+    body {{ background: #fff; color: #111; }}
+    .blk .body, .det .body {{ border-color: #ccc; background: #f8fafc; }}
+    h1 {{ color: #111; }}
+  }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">IAExpertise · Bússola Inteligente</div>
+    <h1>Relatório de maturidade digital</h1>
+    <div class="meta">
+      <span><strong>Empresa / órgão:</strong> {emp or "—"}</span>
+      <span><strong>Contato:</strong> {nom or "—"}</span>
+    </div>
+    <div class="meta">
+      <span><strong>Segmento:</strong> {seg or "—"}</span>
+      <span><strong>Site:</strong> {site or "—"}</span>
+    </div>
+    <div class="meta"><span><strong>Desafio (Sebrae):</strong> {dor or "—"}</span></div>
+    <div class="meta"><span><strong>Emitido em:</strong> {esc(when)}</span></div>
+  </header>
+
+  <div class="chart-box">
+    <h2>Mapa de maturidade (0–10)</h2>
+    {chart_html}
+  </div>
+
+  {chr(10).join(blocos)}
+
+  <section class="blk">
+    <h2>Detalhes por eixo</h2>
+    {det_html}
+  </section>
+
+  <footer>
+    Relatório gerado pela Bússola Inteligente (IAExpertise). Uso de dados públicos e informações fornecidas pelo solicitante.
+    Para salvar em PDF: use Imprimir → Salvar como PDF no navegador.
+  </footer>
+</div>
+</body>
+</html>
+"""
+
+
 def build_notification_bodies(
     lead: dict,
     scores: dict,
@@ -768,6 +922,20 @@ def render_relatorio() -> None:
     for k, title in labels.items():
         with st.expander(f"{title} — {scores[k]}/10"):
             st.write(result["detalhes"].get(k, "—"))
+
+    report_html = build_html_report(lead, result, fig)
+    st.download_button(
+        label="Baixar relatório completo (HTML)",
+        data=report_html.encode("utf-8"),
+        file_name=f"bussola_inteligente_{safe_report_filename(lead.get('empresa', ''))}.html",
+        mime="text/html",
+        key="download_relatorio_html",
+        use_container_width=True,
+    )
+    st.caption(
+        "Abra o arquivo no navegador para visualizar o gráfico interativo. "
+        "Para PDF: use Imprimir → Salvar como PDF."
+    )
 
     ts = datetime.now().isoformat(timespec="seconds")
 

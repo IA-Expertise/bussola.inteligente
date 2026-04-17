@@ -3,8 +3,3 @@ openai>=1.40.0
 plotly>=5.18.0
 python-dotenv>=1.0.0
 agentmail>=0.4.0
-agentmail
-openai
-plotly
-python-dotenv
-streamlit
