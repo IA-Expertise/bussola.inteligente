@@ -830,7 +830,7 @@ def render_formulario() -> None:
         if st.button("← Início"):
             reset_para_landing()
             st.rerun()
-    st.markdown("## Consultoria Gratuita IAExpertise")
+    st.markdown("## Use a Bússola Inteligente para corrigir a rota da sua empresa")
     st.caption(
         "Foco em presença digital pública: Google (busca e Maps), Google Meu Negócio, site e redes — sem senhas."
     )
