@@ -1,6 +1,6 @@
 """
 Bússola Inteligente — Diagnóstico de maturidade digital (Streamlit + GPT-4o-mini)
-IAExpertise · leads em leads.csv · AgentMail para notificação interna
+IAExpertise · leads em PostgreSQL (Supabase) com fallback em leads.csv · AgentMail
 """
 
 from __future__ import annotations
@@ -24,23 +24,14 @@ load_dotenv()
 # -----------------------------------------------------------------------------
 # Configuração
 # -----------------------------------------------------------------------------
-WHATSAPP_ARQUITETO = os.getenv("WHATSAPP_ARQUITETO", "5511999999999")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+WHATSAPP_ARQUITETO = (os.getenv("WHATSAPP_ARQUITETO") or "").strip()
+OPENAI_MODEL = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
 LEADS_CSV = Path(__file__).resolve().parent / "leads.csv"
 
-AGENTMAIL_INBOX = os.getenv("AGENTMAIL_INBOX", "bussola.inteligente@agentmail.to")
-AGENTMAIL_NOTIFY_TO = os.getenv("AGENTMAIL_NOTIFY_TO", "contato@iaexpertise.com.br")
+LINKEDIN_IAEXPERTISE_URL = (os.getenv("LINKEDIN_IAEXPERTISE_URL") or "").strip()
 
-LINKEDIN_IAEXPERTISE_URL = os.getenv(
-    "LINKEDIN_IAEXPERTISE_URL",
-    "https://www.linkedin.com/company/iaexpertise/",
-)
-
-# Vídeo da landing — substitua por URL do YouTube (Secret YOUTUBE_VIDEO_URL no Replit)
-YOUTUBE_VIDEO_URL = os.getenv(
-    "YOUTUBE_VIDEO_URL",
-    "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-)
+# Vídeo da landing — defina YOUTUBE_VIDEO_URL nas variáveis de ambiente (Railway / local).
+YOUTUBE_VIDEO_URL = (os.getenv("YOUTUBE_VIDEO_URL") or "").strip()
 
 SAPPHIRE = "#0F52BA"
 
@@ -236,7 +227,7 @@ def call_openai_diagnostico(payload: str) -> dict:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY não configurada. Defina a variável de ambiente ou o secret no Replit."
+            "OPENAI_API_KEY não configurada. Defina a variável de ambiente (ex.: Railway / .env)."
         )
     client = OpenAI(api_key=api_key)
     completion = client.chat.completions.create(
@@ -620,15 +611,19 @@ def send_agentmail_notification(
     text_body, html_body = build_notification_bodies(lead, scores, result, ts)
     empresa = (lead.get("empresa") or "Lead").strip()
     subject = f"[Bússola] Novo diagnóstico — {empresa}"
-    inbox_id = (AGENTMAIL_INBOX or "").strip()
+    inbox_id = (os.getenv("AGENTMAIL_INBOX") or "").strip()
     if not inbox_id or "@" not in inbox_id:
-        return False, "AGENTMAIL_INBOX inválido"
+        return False, "AGENTMAIL_INBOX inválido ou ausente (defina a variável de ambiente)."
+
+    notify_to = (os.getenv("AGENTMAIL_NOTIFY_TO") or "").strip()
+    if not notify_to or "@" not in notify_to:
+        return False, "AGENTMAIL_NOTIFY_TO ausente ou inválido (defina a variável de ambiente)."
 
     try:
         client = AgentMail(api_key=api_key)
         client.inboxes.messages.send(
             inbox_id,
-            to=AGENTMAIL_NOTIFY_TO,
+            to=notify_to,
             subject=subject,
             text=text_body,
             html=html_body,
@@ -676,6 +671,86 @@ def save_lead_csv(row: dict) -> None:
         w.writerow(row)
 
 
+def save_lead_postgres(row: dict) -> tuple[bool, str | None]:
+    """Insere uma linha em public.leads. Requer DATABASE_URL (Supabase / Postgres)."""
+    dsn = (os.getenv("DATABASE_URL") or "").strip()
+    if not dsn:
+        return False, "DATABASE_URL ausente"
+
+    try:
+        import psycopg2
+        from psycopg2.extras import Json
+    except ImportError:
+        return False, "Dependência psycopg2 não disponível"
+
+    raw_diag = row.get("diagnostico_json") or "{}"
+    try:
+        diag_json = Json(json.loads(raw_diag) if isinstance(raw_diag, str) else raw_diag)
+    except json.JSONDecodeError:
+        diag_json = Json({})
+
+    sql = """
+        INSERT INTO public.leads (
+            timestamp_iso, nome, empresa, site, segmento, gmb_maps, termo_google,
+            instagram, facebook, linkedin, youtube, tiktok, whatsapp, email_cliente,
+            optin_autorizado, dor_sebrae,
+            atendimento, visual, seo_local, tecnologia, autoridade,
+            introducao_analitica, caminhos_recomendados, raio_x_realista, dica_gestor,
+            oportunidades_iaexpertise, diagnostico_json
+        ) VALUES (
+            %(timestamp_iso)s, %(nome)s, %(empresa)s, %(site)s, %(segmento)s,
+            %(gmb_maps)s, %(termo_google)s, %(instagram)s, %(facebook)s, %(linkedin)s,
+            %(youtube)s, %(tiktok)s, %(whatsapp)s, %(email_cliente)s,
+            %(optin_autorizado)s, %(dor_sebrae)s,
+            %(atendimento)s, %(visual)s, %(seo_local)s, %(tecnologia)s, %(autoridade)s,
+            %(introducao_analitica)s, %(caminhos_recomendados)s, %(raio_x_realista)s,
+            %(dica_gestor)s, %(oportunidades_iaexpertise)s, %(diag_json)s
+        )
+    """
+    params = {k: row[k] for k in (
+        "timestamp_iso", "nome", "empresa", "site", "segmento", "gmb_maps", "termo_google",
+        "instagram", "facebook", "linkedin", "youtube", "tiktok", "whatsapp", "email_cliente",
+        "optin_autorizado", "dor_sebrae", "atendimento", "visual", "seo_local", "tecnologia",
+        "autoridade", "introducao_analitica", "caminhos_recomendados", "raio_x_realista",
+        "dica_gestor", "oportunidades_iaexpertise",
+    )}
+    params["diag_json"] = diag_json
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+        conn.commit()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return False, str(e)
+    finally:
+        if conn:
+            conn.close()
+    return True, None
+
+
+def persist_lead(row: dict) -> tuple[bool, str, str | None]:
+    """
+    Prioriza PostgreSQL (DATABASE_URL). Em falha ou ausência de URL, usa leads.csv.
+    Retorna (sucesso_geral, mensagem_usuario, detalhe_erro_se_falha_total).
+    """
+    db_ok, db_err = save_lead_postgres(row)
+    if db_ok:
+        return True, "Lead registrado no PostgreSQL (Supabase).", None
+
+    try:
+        save_lead_csv(row)
+    except Exception as e:
+        msg_db = db_err or "DATABASE_URL ausente ou banco indisponível."
+        return False, "", f"{msg_db} | CSV também falhou: {e}"
+
+    hint = db_err or "DATABASE_URL ausente ou banco indisponível."
+    return True, f"Lead registrado em `{LEADS_CSV.name}` (fallback). {hint}", None
+
+
 def init_session() -> None:
     if "etapa" not in st.session_state:
         st.session_state.etapa = "landing"
@@ -695,12 +770,18 @@ def reset_para_landing() -> None:
 
 
 def render_footer() -> None:
+    linkedin_html = ""
+    if LINKEDIN_IAEXPERTISE_URL:
+        linkedin_html = (
+            f'<p><a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" '
+            'rel="noopener">IAExpertise no LinkedIn</a></p>'
+        )
     st.markdown(
         f"""
 <div class="site-footer">
   <div class="brand">IAExpertise</div>
   <p class="author">Eduardo Augusto Sona — Jornalista e Especialista em IA</p>
-  <p><a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" rel="noopener">IAExpertise no LinkedIn</a></p>
+  {linkedin_html}
   <p class="lgpd-badge">🔒 Dados protegidos (LGPD)</p>
 </div>
 """,
@@ -718,11 +799,18 @@ def render_landing() -> None:
 
     _, c_mid, _ = st.columns([1, 8, 1])
     with c_mid:
-        try:
-            st.video(YOUTUBE_VIDEO_URL)
-        except Exception:
-            st.info("Configure a URL do vídeo em `YOUTUBE_VIDEO_URL` (Secrets).")
-            st.markdown(f"[Abrir vídeo no YouTube]({YOUTUBE_VIDEO_URL})")
+        if YOUTUBE_VIDEO_URL:
+            try:
+                st.video(YOUTUBE_VIDEO_URL)
+            except Exception:
+                st.info("Não foi possível incorporar o vídeo. Verifique `YOUTUBE_VIDEO_URL`.")
+                st.markdown(
+                    f'<p><a href="{html.escape(YOUTUBE_VIDEO_URL)}" target="_blank" '
+                    'rel="noopener">Abrir vídeo no YouTube</a></p>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("Configure a URL do vídeo em `YOUTUBE_VIDEO_URL` (variável de ambiente).")
 
     st.markdown(
         '<div class="card-saph" style="margin-top:1.25rem;">'
@@ -992,9 +1080,12 @@ def render_relatorio() -> None:
             "oportunidades_iaexpertise": result["oportunidades_iaexpertise"],
             "diagnostico_json": diag_json,
         }
-        save_lead_csv(row)
+        ok_persist, msg_persist, err_persist = persist_lead(row)
         st.session_state.lead_persistido = True
-        st.success(f"Lead registrado em `{LEADS_CSV.name}`.")
+        if ok_persist:
+            st.success(msg_persist)
+        else:
+            st.error(err_persist or "Falha ao registrar lead.")
 
         lead_mail = {
             "nome": lead.get("nome", ""),
@@ -1015,8 +1106,10 @@ def render_relatorio() -> None:
         }
         ok_mail, err_mail = send_agentmail_notification(lead_mail, scores, result, ts)
         if ok_mail:
+            inbox_disp = (os.getenv("AGENTMAIL_INBOX") or "").strip()
+            notify_disp = (os.getenv("AGENTMAIL_NOTIFY_TO") or "").strip()
             st.info(
-                f"Notificação enviada de **{AGENTMAIL_INBOX}** para **{AGENTMAIL_NOTIFY_TO}**."
+                f"Notificação enviada de **{inbox_disp}** para **{notify_disp}**."
             )
         else:
             st.warning(f"E-mail interno não enviado: {err_mail}")
