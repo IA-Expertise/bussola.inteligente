@@ -15,8 +15,9 @@ Use este roteiro para verificar se a implantação está completa e correta.
 
 ## B. Schema e tabela
 
-- [ ] Foi executado o SQL completo do arquivo **`sql/init_leads.sql`** (repositório) no editor SQL do Railway Postgres.
-- [ ] A tabela **`public.leads`** existe (consulta de teste abaixo sem erro).
+- [ ] O **`Procfile`** inicia com `python scripts/ensure_db.py && streamlit ...` (deploy aplica o schema automaticamente se `DATABASE_URL` existir).
+- [ ] Nos **logs do deploy** do app aparece `ensure_db: tabela public.leads verificada/criada` **ou** `DATABASE_URL ausente — pulando` (só CSV, nesse caso).
+- [ ] A tabela **`public.leads`** existe (consulta abaixo), **ou** você aceita só CSV até definir `DATABASE_URL`.
 
 **Consulta de verificação:**
 

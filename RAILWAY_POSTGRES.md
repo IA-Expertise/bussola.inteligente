@@ -9,10 +9,11 @@ Guia curto para ativar o banco **no próprio Railway** (sem Supabase). O código
 3. Aguarde o provisionamento. Abra o **card do Postgres**.
 4. Vá em **Variables** (ou **Connect**) e copie a **`DATABASE_URL`** (ou `POSTGRES_URL` / `DATABASE_PRIVATE_URL`, conforme o painel mostrar — use a que o Railway indica para apps no mesmo projeto).
 
-## 2. Criar a tabela
+## 2. Criar a tabela (automático no deploy)
 
-1. No card do **Postgres**, use a aba **Query** / **Data** → **SQL** (nome varia) **ou** conecte com um cliente externo usando a mesma URL.
-2. Cole e execute o arquivo **`sql/init_leads.sql`** deste repositório (inteiro).
+Com o **`Procfile`** atual, cada deploy roda **`python scripts/ensure_db.py`** antes do Streamlit. Esse script lê **`sql/init_leads.sql`** e cria **`public.leads`** se ainda não existir — **não é obrigatório** colar SQL manualmente no painel do Railway.
+
+**Opcional (manual):** ainda pode executar `sql/init_leads.sql` no Query do Postgres se preferir validar à mão.
 
 ## 3. Ligar o app Streamlit
 

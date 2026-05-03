@@ -1,6 +1,6 @@
 """
 Bússola Inteligente — Diagnóstico de maturidade digital (Streamlit + GPT-4o-mini)
-IAExpertise · leads em PostgreSQL (Supabase) com fallback em leads.csv · AgentMail
+IAExpertise · leads em PostgreSQL (Railway/Supabase) com fallback em leads.csv · schema via scripts/ensure_db.py no deploy · AgentMail
 """
 
 from __future__ import annotations
