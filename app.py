@@ -19,7 +19,10 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from database import init_db
+
 load_dotenv()
+init_db()
 
 # -----------------------------------------------------------------------------
 # Configuração
