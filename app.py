@@ -1,6 +1,6 @@
 """
 Bússola Inteligente — Diagnóstico de maturidade digital (Streamlit + GPT-4o-mini)
-IAExpertise · leads em PostgreSQL (Railway/Supabase) com fallback em leads.csv · schema via scripts/ensure_db.py no deploy · AgentMail
+IAExpertise · leads em PostgreSQL (Railway/Supabase) com fallback em leads.csv · schema via database.init_db · AgentMail
 """
 
 from __future__ import annotations
@@ -18,8 +18,10 @@ import plotly.graph_objects as go
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
+from database import init_db
 
 load_dotenv()
+init_db()
 
 # -----------------------------------------------------------------------------
 # Configuração
