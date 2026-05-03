@@ -672,7 +672,7 @@ def save_lead_csv(row: dict) -> None:
 
 
 def save_lead_postgres(row: dict) -> tuple[bool, str | None]:
-    """Insere uma linha em public.leads. Requer DATABASE_URL (Supabase / Postgres)."""
+    """Insere uma linha em public.leads. Requer DATABASE_URL (Railway Postgres, Supabase ou outro Postgres)."""
     dsn = (os.getenv("DATABASE_URL") or "").strip()
     if not dsn:
         return False, "DATABASE_URL ausente"

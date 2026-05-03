@@ -1,5 +1,5 @@
--- Bússola Inteligente — tabela de leads (PostgreSQL)
--- Supabase: Editor SQL. Railway Postgres: ver RAILWAY_POSTGRES.md e sql/init_leads.sql (equivalente).
+-- Bússola Inteligente — tabela public.leads (PostgreSQL genérico)
+-- Use no Railway Postgres: Query / psql / cliente SQL, uma vez por banco.
 
 CREATE TABLE IF NOT EXISTS public.leads (
   id BIGSERIAL PRIMARY KEY,
@@ -36,9 +36,3 @@ CREATE INDEX IF NOT EXISTS idx_leads_timestamp_iso ON public.leads (timestamp_is
 CREATE INDEX IF NOT EXISTS idx_leads_empresa ON public.leads (empresa);
 
 COMMENT ON TABLE public.leads IS 'Leads e diagnósticos exportados da Bússola Inteligente (IAExpertise).';
-
--- Se o projeto Supabase exigir RLS e a conexão do Railway não for service_role com bypass,
--- ajuste políticas ou use conexão com role que possa inserir. Para app backend com URI
--- "Database Settings > Connection string > URI", costuma funcionar sem política extra.
--- Descomente apenas se precisar permitir leitura/escrita via PostgREST com anon:
--- ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
