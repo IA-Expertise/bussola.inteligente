@@ -19,7 +19,13 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from database import init_db
+
 load_dotenv()
+
+# Initialise the PostgreSQL schema once at process startup so the
+# public.leads table exists before any lead-persistence calls are made.
+init_db()
 
 # -----------------------------------------------------------------------------
 # Configuração
