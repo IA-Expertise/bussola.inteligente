@@ -54,23 +54,15 @@ repositório `IA-Expertise/cpfalerta` + arquivo complementar [`INSTRUCAO_AGENTE_
 
 ### Fase 2 — Cadastro, login e sessão (3–4 dias)
 
-Copiar/adaptar do **CPF Alerta**:
+- [x] `db_manager.py` — cadastro e login (e-mail + senha PBKDF2)
+- [x] `session_auth.py` — cookie HMAC `bussola_auth` (extra-streamlit-components)
+- [x] Tabela `public.users` (`sql/migrations/002_users.sql` + `database.init_db`)
+- [x] Fluxo: preview → desbloquear → **auth** → **checkout** (Pix na Fase 3)
+- [x] Pré-preenchimento cadastro com dados do formulário
 
-| Origem (cpfalerta) | Adaptação Bússola |
-|--------------------|-------------------|
-| `session_auth.py` | Cookie HMAC `bussola_auth`; TTL 30 dias |
-| `db_manager.py` (cadastro/login) | E-mail + senha; PF/PJ opcional; CNPJ opcional para histórico PJ |
-| Migrations `tenants` + `users` | Ver schema seção 5 (modelo simplificado **sem carteira** se não precisar) |
+**Entrega:** usuário identificado para histórico e cobrança (Fase 3).
 
-**Fluxo UX:**
-
-1. Após preview → CTA “Desbloquear relatório completo — R$ 19,90”.
-2. Se **não logado:** abas **Login** | **Cadastro rápido** (e-mail, senha, nome, empresa; CNPJ opcional).
-3. Após login → tela de pagamento.
-
-**Entrega:** usuário identificado para histórico e cobrança.
-
-**Estimativa acumulada:** +3–4 dias.
+**Railway:** defina `BUSSOLA_AUTH_SECRET` (string aleatória longa) no serviço Streamlit.
 
 ---
 

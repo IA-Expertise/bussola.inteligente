@@ -8,6 +8,8 @@ from __future__ import annotations
 import os
 import sys
 
+from pathlib import Path
+
 _SQL = """
 CREATE TABLE IF NOT EXISTS public.leads (
   id BIGSERIAL PRIMARY KEY,
@@ -44,16 +46,35 @@ CREATE INDEX IF NOT EXISTS idx_leads_empresa ON public.leads (empresa);
 COMMENT ON TABLE public.leads IS 'Leads e diagnósticos exportados da Bússola Inteligente (IAExpertise).';
 """
 
+_MIGRATIONS_DIR = Path(__file__).resolve().parent / "sql" / "migrations"
+
+
+def _split_sql(sql_text: str) -> list[str]:
+    lines: list[str] = []
+    for line in sql_text.splitlines():
+        if line.strip().startswith("--"):
+            continue
+        lines.append(line)
+    cleaned = "\n".join(lines)
+    return [s.strip() for s in cleaned.split(";") if s.strip()]
+
+
+def _execute_sql_script(cur, sql_text: str) -> None:
+    for stmt in _split_sql(sql_text):
+        cur.execute(stmt)
+
+
+def _load_migration_files() -> list[Path]:
+    if not _MIGRATIONS_DIR.is_dir():
+        return []
+    return sorted(_MIGRATIONS_DIR.glob("*.sql"))
+
+
 _initialized = False
 
 
 def init_db() -> None:
-    """Cria a tabela public.leads (e índices) se ainda não existirem.
-
-    Lê DATABASE_URL do ambiente. Retorna silenciosamente se a variável não
-    estiver definida. Erros de conexão ou SQL são registrados em stderr mas
-    não interrompem a inicialização do app.
-    """
+    """Cria tabelas public.leads e migrations se ainda não existirem."""
     global _initialized
     if _initialized:
         return
@@ -77,11 +98,10 @@ def init_db() -> None:
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
-            # psycopg2: uma instrução por execute (múltiplos ; no mesmo execute falham)
-            for stmt in (s.strip() for s in _SQL.split(";")):
-                if stmt:
-                    cur.execute(stmt)
-        print("database.init_db: schema public.leads verificado/criado com sucesso.")
+            _execute_sql_script(cur, _SQL)
+            for path in _load_migration_files():
+                _execute_sql_script(cur, path.read_text(encoding="utf-8"))
+        print("database.init_db: schema verificado/criado (leads + migrations).")
         _initialized = True
     except Exception as exc:
         print(f"database.init_db: falha ao executar SQL de inicialização: {exc}", file=sys.stderr)

@@ -19,6 +19,8 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 from database import init_db
+from db_manager import UserSession, cadastrar_usuario, verificar_login
+from session_auth import login_user, logout_user, restaurar_sessao_do_cookie
 
 from config import (
     BUSSOLA_DEV_UNLOCK_RELATORIO,
@@ -843,6 +845,14 @@ def init_session() -> None:
         st.session_state.agentmail_enviado = False
     if "relatorio_desbloqueado" not in st.session_state:
         st.session_state.relatorio_desbloqueado = False
+    if "user" not in st.session_state:
+        st.session_state.user = None
+    if "auth_return" not in st.session_state:
+        st.session_state.auth_return = "checkout"
+
+
+def get_logged_in_user() -> UserSession | None:
+    return st.session_state.get("user")
 
 
 def reset_para_landing() -> None:
@@ -1194,10 +1204,23 @@ def render_preview() -> None:
         use_container_width=True,
         key="btn_desbloquear",
     ):
-        st.info(
-            "Pagamento via Pix (Asaas) será habilitado na **Fase 3** do roadmap. "
-            "Por enquanto, este preview já mostra seu mapa de maturidade e a prioridade #1."
-        )
+        if not get_logged_in_user():
+            st.session_state.auth_return = "checkout"
+            st.session_state.etapa = "auth"
+            st.rerun()
+        else:
+            st.session_state.etapa = "checkout"
+            st.rerun()
+
+    user = get_logged_in_user()
+    if user:
+        lc1, lc2 = st.columns([3, 1])
+        with lc1:
+            st.caption(f"Conectado como **{html.escape(user.email)}**")
+        with lc2:
+            if st.button("Sair", key="logout_preview"):
+                logout_user()
+                st.rerun()
 
     if BUSSOLA_DEV_UNLOCK_RELATORIO:
         if st.button("🔧 [DEV] Ver relatório completo sem pagamento", use_container_width=True):
@@ -1215,6 +1238,118 @@ def render_preview() -> None:
 
     if st.button("Nova análise", use_container_width=True, key="nova_preview"):
         reset_para_landing()
+        st.rerun()
+
+
+def render_auth() -> None:
+    if not (os.getenv("DATABASE_URL") or "").strip():
+        st.error("Cadastro/login indisponível: configure DATABASE_URL no servidor.")
+        if st.button("← Voltar ao preview"):
+            st.session_state.etapa = "preview"
+            st.rerun()
+        return
+
+    lead = st.session_state.lead_snap or {}
+    r1, _ = st.columns([1, 5])
+    with r1:
+        if st.button("← Preview", key="auth_voltar_preview"):
+            st.session_state.etapa = "preview"
+            st.rerun()
+
+    st.markdown("## Acesso à Bússola")
+    st.caption(
+        f"Crie sua conta ou entre para desbloquear o relatório completo ({PRECO_FORMATADO}). "
+        "Seus diagnósticos ficam salvos para comparar a evolução nos próximos meses."
+    )
+
+    tab_login, tab_cadastro = st.tabs(["Já tenho conta", "Criar conta"])
+
+    with tab_login:
+        with st.form("form_login"):
+            email = st.text_input("E-mail", key="login_email")
+            senha = st.text_input("Senha", type="password", key="login_senha")
+            if st.form_submit_button("Entrar", use_container_width=True):
+                sess = verificar_login(email, senha)
+                if not sess:
+                    st.error("E-mail ou senha incorretos.")
+                else:
+                    login_user(sess)
+                    st.session_state.etapa = st.session_state.auth_return or "checkout"
+                    st.success("Login realizado.")
+                    st.rerun()
+
+    with tab_cadastro:
+        with st.form("form_cadastro"):
+            nome = st.text_input("Nome completo", value=lead.get("nome", ""), key="cad_nome")
+            empresa = st.text_input(
+                "Empresa / negócio",
+                value=lead.get("empresa", ""),
+                key="cad_empresa",
+            )
+            cnpj = st.text_input("CNPJ (opcional)", placeholder="Somente números", key="cad_cnpj")
+            email_c = st.text_input(
+                "E-mail",
+                value=lead.get("email_cliente", ""),
+                key="cad_email",
+            )
+            senha_c = st.text_input("Senha (mín. 6 caracteres)", type="password", key="cad_senha")
+            senha2 = st.text_input("Confirmar senha", type="password", key="cad_senha2")
+            if st.form_submit_button("Criar conta", use_container_width=True):
+                if senha_c != senha2:
+                    st.error("As senhas não coincidem.")
+                else:
+                    sess, err = cadastrar_usuario(
+                        email_c, senha_c, nome, empresa=empresa, cnpj=cnpj
+                    )
+                    if err:
+                        st.error(err)
+                    elif sess:
+                        login_user(sess)
+                        st.session_state.etapa = st.session_state.auth_return or "checkout"
+                        st.success("Conta criada com sucesso.")
+                        st.rerun()
+
+
+def render_checkout() -> None:
+    user = get_logged_in_user()
+    if not user:
+        st.session_state.etapa = "auth"
+        st.session_state.auth_return = "checkout"
+        st.rerun()
+        return
+
+    r1, _ = st.columns([1, 5])
+    with r1:
+        if st.button("← Preview", key="checkout_voltar_preview"):
+            st.session_state.etapa = "preview"
+            st.rerun()
+
+    st.markdown(f"## Quase lá, {html.escape(user.nome.split()[0] if user.nome else 'cliente')}! 🧭")
+    st.markdown(
+        f"""
+<div class="paywall-box">
+  <h3>Relatório completo de visibilidade digital</h3>
+  <p style="color:#94a3b8;margin:.5rem 0;">Plano de ação detalhado + exportação HTML/PDF</p>
+  <p class="paywall-price">{html.escape(PRECO_FORMATADO)}</p>
+  <p style="color:#64748b;font-size:.85rem;margin-top:.5rem;">Pagamento via Pix · entrega na hora</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    st.info(
+        "Pagamento via Pix (Asaas) será habilitado na **Fase 3**. "
+        "Sua conta já está criada — na próxima atualização você paga aqui e recebe o relatório na hora."
+    )
+
+    if BUSSOLA_DEV_UNLOCK_RELATORIO:
+        if st.button("🔧 [DEV] Liberar relatório completo", type="primary", use_container_width=True):
+            st.session_state.relatorio_desbloqueado = True
+            st.session_state.etapa = "relatorio"
+            st.rerun()
+
+    if st.button("Voltar ao preview", use_container_width=True):
+        st.session_state.etapa = "preview"
         st.rerun()
 
 
@@ -1360,6 +1495,12 @@ def main() -> None:
     init_session()
     inject_css()
 
+    if not get_logged_in_user() and not st.session_state.get("_auth_bootstrapped"):
+        st.session_state._auth_bootstrapped = True
+        restaurar_sessao_do_cookie()
+        if not get_logged_in_user():
+            st.rerun()
+
     etapa = st.session_state.etapa
 
     if etapa == "landing":
@@ -1368,6 +1509,10 @@ def main() -> None:
         render_formulario()
     elif etapa == "preview":
         render_preview()
+    elif etapa == "auth":
+        render_auth()
+    elif etapa == "checkout":
+        render_checkout()
     elif etapa == "relatorio":
         render_relatorio()
     else:

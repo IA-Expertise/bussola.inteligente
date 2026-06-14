@@ -19,6 +19,7 @@ Checklist enquanto o domínio é registrado e apontado.
 | `BUSSOLA_APP_URL` | `https://app.bussolainteligente.com.br/` | 0 |
 | `BUSSOLA_LP_URL` | `https://www.bussolainteligente.com.br` | 0 |
 | `RELATORIO_PRECO_REAIS` | `19.90` | 1 |
+| `BUSSOLA_AUTH_SECRET` | string aleatória longa (≥32 chars) | 2 |
 | `BUSSOLA_DEV_UNLOCK_RELATORIO` | `1` só em teste | 1 (dev) |
 
 ## Deploy da LP (`landing/`)
