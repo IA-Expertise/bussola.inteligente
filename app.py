@@ -19,7 +19,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 from database import init_db
-from db_manager import UserSession, buscar_pagamento_por_id, cadastrar_usuario, verificar_login
+from db_manager import UserSession, atualizar_documento_usuario, buscar_pagamento_por_id, cadastrar_usuario, verificar_login
 from payments_asaas import criar_cobranca_relatorio, obter_pix_qrcode, sincronizar_pagamento_local
 from session_auth import login_user, logout_user, restaurar_sessao_do_cookie
 
@@ -1343,7 +1343,11 @@ def render_auth() -> None:
                 value=lead.get("empresa", ""),
                 key="cad_empresa",
             )
-            cnpj = st.text_input("CNPJ (opcional)", placeholder="Somente números", key="cad_cnpj")
+            cnpj = st.text_input(
+                "CPF ou CNPJ (obrigatório para Pix)",
+                placeholder="Somente números",
+                key="cad_cnpj",
+            )
             email_c = st.text_input(
                 "E-mail",
                 value=lead.get("email_cliente", ""),
@@ -1414,14 +1418,34 @@ def render_checkout() -> None:
         return
 
     if not cobranca_row:
-        if st.button("Gerar cobrança Pix", type="primary", use_container_width=True, key="gerar_pix"):
+        doc_digits = only_digits(user.cnpj)
+        if len(doc_digits) not in (11, 14):
+            st.warning("Para gerar o Pix, informe seu CPF ou CNPJ.")
+            with st.form("form_doc_pix"):
+                doc = st.text_input("CPF ou CNPJ", placeholder="Somente números", key="checkout_doc")
+                if st.form_submit_button("Salvar documento", use_container_width=True):
+                    sess, err = atualizar_documento_usuario(user.id, doc)
+                    if err:
+                        st.error(err)
+                    elif sess:
+                        login_user(sess)
+                        st.success("Documento salvo. Clique em **Gerar cobrança Pix**.")
+                        st.rerun()
+        elif st.button("Gerar cobrança Pix", type="primary", use_container_width=True, key="gerar_pix"):
             with st.spinner("Gerando Pix no Asaas…"):
                 try:
                     cob = criar_cobranca_relatorio(user)
                     st.session_state.checkout_pagamento_id = cob.pagamento_id
                     st.rerun()
                 except Exception as exc:
-                    st.error(str(exc))
+                    msg = str(exc)
+                    if "invalid_customer" in msg:
+                        st.error(
+                            "Não foi possível vincular seu cadastro ao pagamento. "
+                            "Informe CPF/CNPJ no formulário acima e tente novamente."
+                        )
+                    else:
+                        st.error(msg)
     else:
         st.success("Pix gerado. Pague pelo app do banco e clique em **Já paguei** abaixo.")
         try:

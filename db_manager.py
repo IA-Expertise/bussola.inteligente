@@ -195,6 +195,46 @@ def atualizar_asaas_customer_id(user_id: str, customer_id: str) -> None:
         conn.close()
 
 
+def limpar_asaas_customer_id(user_id: str) -> None:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE public.users SET asaas_customer_id = NULL WHERE id = %s",
+                (user_id,),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def atualizar_documento_usuario(user_id: str, documento: str) -> tuple[UserSession | None, str | None]:
+    digits = re.sub(r"\D", "", documento or "")
+    if len(digits) not in (11, 14):
+        return None, "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido."
+
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE public.users
+                SET cnpj = %s, asaas_customer_id = NULL
+                WHERE id = %s
+                RETURNING id, email, nome, empresa, cnpj
+                """,
+                (digits, user_id),
+            )
+            row = cur.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+
+    if not row:
+        return None, "Usuário não encontrado."
+    return _row_to_session(row), None
+
+
 def registrar_pagamento_pendente(
     *,
     user_id: str,

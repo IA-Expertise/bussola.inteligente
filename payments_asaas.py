@@ -4,6 +4,7 @@ Cliente Asaas API v3 — cobrança Pix por relatório (Bússola Inteligente).
 from __future__ import annotations
 
 import os
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -14,6 +15,7 @@ from db_manager import (
     UserSession,
     atualizar_asaas_customer_id,
     buscar_pagamento_por_id,
+    limpar_asaas_customer_id,
     liquidar_pagamento_por_asaas_id,
     obter_asaas_customer_id,
     registrar_pagamento_pendente,
@@ -79,14 +81,40 @@ def status_confirmado(status: str) -> bool:
     return (status or "").upper() in STATUS_PAGO
 
 
+def _cpf_cnpj_digits(user: UserSession) -> str:
+    return re.sub(r"\D", "", user.cnpj or "")
+
+
+def customer_existe_no_asaas(customer_id: str) -> bool:
+    try:
+        data = _request("GET", f"/customers/{customer_id}")
+        return bool((data.get("id") or "").strip())
+    except RuntimeError as exc:
+        msg = str(exc)
+        if " 404" in msg or "not found" in msg.lower():
+            return False
+        raise
+
+
 def garantir_customer(user: UserSession) -> str:
     existing = obter_asaas_customer_id(user.id)
-    if existing:
+    if existing and customer_existe_no_asaas(existing):
         return existing
+    if existing:
+        limpar_asaas_customer_id(user.id)
 
-    body: dict = {"name": user.nome or user.email, "email": user.email}
-    if user.cnpj and len(user.cnpj) >= 11:
-        body["cpfCnpj"] = user.cnpj
+    cpf_cnpj = _cpf_cnpj_digits(user)
+    if len(cpf_cnpj) not in (11, 14):
+        raise RuntimeError(
+            "Informe CPF (11 dígitos) ou CNPJ (14 dígitos) para gerar o Pix. "
+            "Use o formulário abaixo nesta página."
+        )
+
+    body: dict = {
+        "name": user.nome or user.email,
+        "email": user.email,
+        "cpfCnpj": cpf_cnpj,
+    }
 
     data = _request("POST", "/customers", json_body=body)
     customer_id = (data.get("id") or "").strip()
