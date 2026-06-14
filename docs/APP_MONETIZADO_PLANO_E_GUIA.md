@@ -29,10 +29,10 @@ repositório `IA-Expertise/cpfalerta` + arquivo complementar [`INSTRUCAO_AGENTE_
 
 ### Fase 0 — Preparação (1–2 dias)
 
-- [ ] Definir domínio: `www` → LP · `app` → Streamlit · `webhook` → Asaas (subdomínios).
+- [x] Definir domínio: `www` → LP · `app` → Streamlit · `webhook` → Asaas (subdomínios) — ver `docs/FASE0_DOMINIO_E_ENV.md`
 - [ ] Conta Asaas **dedicada** ou produto separado na API (descrição: “Relatório visibilidade digital Bússola”).
-- [ ] Variáveis de ambiente documentadas (seção 8).
-- [ ] Branch de trabalho (ex.: `feat/monetizacao`) a partir de `main` / `migracao-railway` estável.
+- [x] Variáveis de ambiente documentadas (seção 8 + `.env.example`)
+- [x] Branch de trabalho: **`feat/monetizacao`**
 
 **Entrega:** infra e contas prontas; app atual continua no ar.
 
@@ -40,11 +40,11 @@ repositório `IA-Expertise/cpfalerta` + arquivo complementar [`INSTRUCAO_AGENTE_
 
 ### Fase 1 — LP + preview (3–5 dias)
 
-- [ ] LP estática ou Next: hero, problema, como funciona, preço, FAQ, CTA “Ver preview grátis”.
-- [ ] `meta` / Open Graph / `sitemap.xml` / JSON-LD básico.
-- [ ] Link LP → `https://app.seudominio.com.br`.
-- [ ] No Streamlit: tela **preview chamativa** (radar + 1 insight + teaser; **sem** PDF/textos completos).
-- [ ] Formulário enxuto (pode manter campos atuais; otimizar depois).
+- [x] LP estática em `landing/` (hero, problema, como funciona, preço, FAQ, CTA)
+- [x] `meta` / Open Graph / `sitemap.xml` / JSON-LD básico
+- [x] CTA LP → app Railway (atualizar domínio ao registrar)
+- [x] Streamlit: etapa **preview** (radar + insight + paywall R$ 19,90; relatório completo só com unlock Fase 3 ou `BUSSOLA_DEV_UNLOCK_RELATORIO=1`)
+- [x] Formulário mantido (otimizar depois)
 
 **Entrega:** tráfego indexável + funil até preview grátis.
 

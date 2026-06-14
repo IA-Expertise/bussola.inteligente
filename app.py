@@ -20,6 +20,14 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from database import init_db
 
+from config import (
+    BUSSOLA_DEV_UNLOCK_RELATORIO,
+    BUSSOLA_LP_URL,
+    RELATORIO_PRECO_REAIS,
+    SAPPHIRE,
+    SCORE_LABELS,
+)
+
 load_dotenv()
 init_db()
 
@@ -35,7 +43,7 @@ LINKEDIN_IAEXPERTISE_URL = (os.getenv("LINKEDIN_IAEXPERTISE_URL") or "").strip()
 # Vídeo da landing — defina YOUTUBE_VIDEO_URL nas variáveis de ambiente (Railway / local).
 YOUTUBE_VIDEO_URL = (os.getenv("YOUTUBE_VIDEO_URL") or "").strip()
 
-SAPPHIRE = "#0F52BA"
+PRECO_FORMATADO = f"R$ {RELATORIO_PRECO_REAIS:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 LANDING_EXPLAIN_HTML = """
 <p style="margin:0 0 1rem 0;line-height:1.65;color:#cbd5e1;">
@@ -203,6 +211,41 @@ def inject_css() -> None:
             font-size: 0.8rem;
             color: #94a3b8;
         }}
+        .preview-hero {{
+            background: linear-gradient(135deg, rgba(15,82,186,.25) 0%, rgba(30,41,59,.8) 100%);
+            border: 1px solid rgba(15, 82, 186, 0.5);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            margin: 1rem 0 1.25rem;
+        }}
+        .preview-score-big {{
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: #f8fafc;
+            line-height: 1;
+        }}
+        .preview-badge {{
+            display: inline-block;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+        }}
+        .preview-lock {{
+            opacity: 0.72;
+            border-style: dashed !important;
+        }}
+        .paywall-box {{
+            background: rgba(15, 82, 186, 0.12);
+            border: 2px solid {SAPPHIRE};
+            border-radius: 14px;
+            padding: 1.35rem 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }}
+        .paywall-box h3 {{ color: #f1f5f9 !important; margin-bottom: 0.5rem !important; }}
+        .paywall-price {{ font-size: 1.75rem; font-weight: 800; color: #93c5fd; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -322,6 +365,40 @@ def build_radar_figure(scores: dict) -> go.Figure:
         height=420,
     )
     return fig
+
+
+def score_average(scores: dict) -> float:
+    return sum(scores[k] for k in SCORE_KEYS) / len(SCORE_KEYS)
+
+
+def weakest_axis(scores: dict) -> tuple[str, int]:
+    key = min(SCORE_KEYS, key=lambda k: scores[k])
+    return key, scores[key]
+
+
+def preview_risk_label(avg: float) -> tuple[str, str]:
+    if avg >= 7:
+        return "Bom", "#22c55e"
+    if avg >= 5:
+        return "Médio", "#eab308"
+    if avg >= 3:
+        return "Atenção", "#f97316"
+    return "Crítico", "#ef4444"
+
+
+def preview_hook_text(result: dict, lead: dict) -> str:
+    intro = (result.get("introducao_analitica") or "").strip()
+    if intro:
+        line = intro.split("\n")[0].strip()
+        if len(line) > 300:
+            return line[:297] + "…"
+        return line
+    wkey, wval = weakest_axis(result["scores"])
+    empresa = lead.get("empresa") or "Seu negócio"
+    return (
+        f"{empresa}: o ponto mais fraco hoje é {SCORE_LABELS[wkey]} ({wval}/10). "
+        "Há margem real para ganhar visibilidade — o relatório completo mostra por onde começar."
+    )
 
 
 def safe_report_filename(empresa: str) -> str:
@@ -762,6 +839,10 @@ def init_session() -> None:
         st.session_state.diagnostico_result = None
     if "lead_persistido" not in st.session_state:
         st.session_state.lead_persistido = False
+    if "agentmail_enviado" not in st.session_state:
+        st.session_state.agentmail_enviado = False
+    if "relatorio_desbloqueado" not in st.session_state:
+        st.session_state.relatorio_desbloqueado = False
 
 
 def reset_para_landing() -> None:
@@ -769,6 +850,8 @@ def reset_para_landing() -> None:
     st.session_state.lead_snap = {}
     st.session_state.diagnostico_result = None
     st.session_state.lead_persistido = False
+    st.session_state.agentmail_enviado = False
+    st.session_state.relatorio_desbloqueado = False
 
 
 def render_footer() -> None:
@@ -824,6 +907,9 @@ def render_landing() -> None:
     if st.button("Quero analisar meu negócio", type="primary", use_container_width=True):
         st.session_state.etapa = "formulario"
         st.rerun()
+
+    if BUSSOLA_LP_URL and "railway.app" not in BUSSOLA_LP_URL:
+        st.caption(f"Site: {BUSSOLA_LP_URL}")
 
 
 def render_formulario() -> None:
@@ -959,8 +1045,177 @@ def render_formulario() -> None:
     }
     st.session_state.diagnostico_result = result
     st.session_state.lead_persistido = False
-    st.session_state.etapa = "relatorio"
+    st.session_state.agentmail_enviado = False
+    st.session_state.relatorio_desbloqueado = False
+    st.session_state.etapa = "preview"
     st.rerun()
+
+
+def _persist_lead_from_session(preview_only: bool = False) -> tuple[bool, str, str | None]:
+    """Grava lead no Postgres/CSV. preview_only omite textos longos no CSV legível."""
+    result = st.session_state.diagnostico_result
+    lead = st.session_state.lead_snap
+    if not result or not lead:
+        return False, "", "Dados ausentes"
+
+    scores = result["scores"]
+    ts = datetime.now().isoformat(timespec="seconds")
+    diag_json = json.dumps(
+        {
+            "scores": scores,
+            "preview_only": preview_only,
+            **{
+                x: result[x]
+                for x in (
+                    "introducao_analitica",
+                    "caminhos_recomendados",
+                    "raio_x_realista",
+                    "dica_gestor",
+                    "oportunidades_iaexpertise",
+                    "detalhes",
+                )
+            },
+        },
+        ensure_ascii=False,
+    )
+    row = {
+        "timestamp_iso": ts,
+        "nome": lead.get("nome", ""),
+        "empresa": lead.get("empresa", ""),
+        "site": lead.get("site", ""),
+        "segmento": lead.get("segmento", ""),
+        "gmb_maps": lead.get("gmb_maps", ""),
+        "termo_google": lead.get("termo_google", ""),
+        "instagram": lead.get("instagram", ""),
+        "facebook": lead.get("facebook", ""),
+        "linkedin": lead.get("linkedin", ""),
+        "youtube": lead.get("youtube", ""),
+        "tiktok": lead.get("tiktok", ""),
+        "whatsapp": lead.get("whatsapp", ""),
+        "email_cliente": lead.get("email_cliente", ""),
+        "optin_autorizado": lead.get("optin", "nao"),
+        "dor_sebrae": lead.get("dor", ""),
+        **{k: scores[k] for k in SCORE_KEYS},
+        "introducao_analitica": "" if preview_only else result.get("introducao_analitica", ""),
+        "caminhos_recomendados": "" if preview_only else result.get("caminhos_recomendados", ""),
+        "raio_x_realista": "" if preview_only else result["raio_x_realista"],
+        "dica_gestor": "" if preview_only else result["dica_gestor"],
+        "oportunidades_iaexpertise": "" if preview_only else result["oportunidades_iaexpertise"],
+        "diagnostico_json": diag_json,
+    }
+    return persist_lead(row)
+
+
+def render_preview() -> None:
+    result = st.session_state.diagnostico_result
+    lead = st.session_state.lead_snap
+    if not result or not lead:
+        st.warning("Nada para exibir. Volte ao início.")
+        if st.button("← Início", key="inicio_preview_vazio"):
+            reset_para_landing()
+            st.rerun()
+        return
+
+    r1, _ = st.columns([1, 5])
+    with r1:
+        if st.button("← Início", key="inicio_preview"):
+            reset_para_landing()
+            st.rerun()
+
+    empresa = html.escape(lead.get("empresa") or "Sua empresa")
+    st.markdown(
+        f'<p class="tagline-saph">Preview gratuito · IAExpertise</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(f"## 🧭 Visibilidade digital — {empresa}")
+
+    scores = result["scores"]
+    fig = build_radar_figure(scores)
+    avg = score_average(scores)
+    risk, risk_color = preview_risk_label(avg)
+    wkey, wval = weakest_axis(scores)
+    hook = preview_hook_text(result, lead)
+
+    col_chart, col_stats = st.columns([1.2, 1])
+    with col_chart:
+        st.plotly_chart(fig, use_container_width=True)
+    with col_stats:
+        st.markdown(
+            f"""
+<div class="preview-hero">
+  <p style="color:#94a3b8;margin:0;font-size:.85rem;">Média geral</p>
+  <p class="preview-score-big">{avg:.1f}<span style="font-size:1.1rem;color:#64748b;">/10</span></p>
+  <span class="preview-badge" style="background:{risk_color}22;color:{risk_color};border:1px solid {risk_color};">
+    Nível: {risk}
+  </span>
+  <p style="color:#cbd5e1;margin:1rem 0 0;font-size:.95rem;">
+    <strong style="color:#f87171;">Prioridade #1:</strong> {html.escape(SCORE_LABELS[wkey])} ({wval}/10)
+  </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    hook_html = html.escape(hook).replace("\n", "<br/>")
+    st.markdown(
+        f'<div class="card-saph"><p style="margin:0;line-height:1.65;">{hook_html}</p></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### O que está no relatório completo (bloqueado no preview)")
+    teasers = [
+        ("Caminhos recomendados", "Plano priorizado para os próximos 30 dias."),
+        ("Raio-X realista", "O que dá para melhorar com o que você tem hoje."),
+        ("Detalhes por eixo", "Google/local, visual, atendimento, tecnologia e autoridade."),
+    ]
+    for title, desc in teasers:
+        st.markdown(
+            f'<div class="card-saph preview-lock">'
+            f'<strong>{html.escape(title)}</strong><br/>'
+            f'<span style="color:#64748b;">🔒 {html.escape(desc)}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        f"""
+<div class="paywall-box">
+  <h3>Desbloqueie o relatório completo</h3>
+  <p style="color:#94a3b8;margin:.5rem 0;">Análise detalhada, plano de ação e download HTML/PDF</p>
+  <p class="paywall-price">{html.escape(PRECO_FORMATADO)}</p>
+  <p style="color:#64748b;font-size:.85rem;margin-top:.5rem;">Pagamento via Pix · entrega na hora</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    if st.button(
+        f"Desbloquear relatório completo — {PRECO_FORMATADO}",
+        type="primary",
+        use_container_width=True,
+        key="btn_desbloquear",
+    ):
+        st.info(
+            "Pagamento via Pix (Asaas) será habilitado na **Fase 3** do roadmap. "
+            "Por enquanto, este preview já mostra seu mapa de maturidade e a prioridade #1."
+        )
+
+    if BUSSOLA_DEV_UNLOCK_RELATORIO:
+        if st.button("🔧 [DEV] Ver relatório completo sem pagamento", use_container_width=True):
+            st.session_state.relatorio_desbloqueado = True
+            st.session_state.etapa = "relatorio"
+            st.rerun()
+
+    if not st.session_state.lead_persistido:
+        ok_persist, msg_persist, err_persist = _persist_lead_from_session(preview_only=True)
+        st.session_state.lead_persistido = True
+        if ok_persist:
+            st.caption(msg_persist)
+        elif err_persist:
+            st.caption(f"Registro: {err_persist}")
+
+    if st.button("Nova análise", use_container_width=True, key="nova_preview"):
+        reset_para_landing()
+        st.rerun()
 
 
 def render_relatorio() -> None:
@@ -973,11 +1228,18 @@ def render_relatorio() -> None:
             st.rerun()
         return
 
-    r1, _ = st.columns([1, 5])
+    if not st.session_state.relatorio_desbloqueado and not BUSSOLA_DEV_UNLOCK_RELATORIO:
+        st.session_state.etapa = "preview"
+        st.rerun()
+        return
+
+    r1, r2 = st.columns([1, 5])
     with r1:
-        if st.button("← Início", key="inicio_rel"):
-            reset_para_landing()
+        if st.button("← Preview", key="voltar_preview"):
+            st.session_state.etapa = "preview"
             st.rerun()
+    with r2:
+        st.caption("Relatório completo desbloqueado")
 
     scores = result["scores"]
     fig = build_radar_figure(scores)
@@ -1011,13 +1273,7 @@ def render_relatorio() -> None:
     op = html.escape(result["oportunidades_iaexpertise"]).replace("\n", "<br/>")
     st.markdown(f'<div class="card-saph">{op}</div>', unsafe_allow_html=True)
 
-    labels = {
-        "atendimento": "Atendimento",
-        "visual": "Visual / marca",
-        "seo_local": "Google / Local",
-        "tecnologia": "Tecnologia",
-        "autoridade": "Autoridade",
-    }
+    labels = SCORE_LABELS
     st.subheader("Detalhes por eixo")
     for k, title in labels.items():
         with st.expander(f"{title} — {scores[k]}/10"):
@@ -1040,55 +1296,15 @@ def render_relatorio() -> None:
     ts = datetime.now().isoformat(timespec="seconds")
 
     if not st.session_state.lead_persistido:
-        diag_json = json.dumps(
-            {
-                "scores": scores,
-                **{
-                    x: result[x]
-                    for x in (
-                        "introducao_analitica",
-                        "caminhos_recomendados",
-                        "raio_x_realista",
-                        "dica_gestor",
-                        "oportunidades_iaexpertise",
-                        "detalhes",
-                    )
-                },
-            },
-            ensure_ascii=False,
-        )
-        row = {
-            "timestamp_iso": ts,
-            "nome": lead.get("nome", ""),
-            "empresa": lead.get("empresa", ""),
-            "site": lead.get("site", ""),
-            "segmento": lead.get("segmento", ""),
-            "gmb_maps": lead.get("gmb_maps", ""),
-            "termo_google": lead.get("termo_google", ""),
-            "instagram": lead.get("instagram", ""),
-            "facebook": lead.get("facebook", ""),
-            "linkedin": lead.get("linkedin", ""),
-            "youtube": lead.get("youtube", ""),
-            "tiktok": lead.get("tiktok", ""),
-            "whatsapp": lead.get("whatsapp", ""),
-            "email_cliente": lead.get("email_cliente", ""),
-            "optin_autorizado": lead.get("optin", "nao"),
-            "dor_sebrae": lead.get("dor", ""),
-            **{k: scores[k] for k in SCORE_KEYS},
-            "introducao_analitica": result.get("introducao_analitica", ""),
-            "caminhos_recomendados": result.get("caminhos_recomendados", ""),
-            "raio_x_realista": result["raio_x_realista"],
-            "dica_gestor": result["dica_gestor"],
-            "oportunidades_iaexpertise": result["oportunidades_iaexpertise"],
-            "diagnostico_json": diag_json,
-        }
-        ok_persist, msg_persist, err_persist = persist_lead(row)
+        ok_persist, msg_persist, err_persist = _persist_lead_from_session(preview_only=False)
         st.session_state.lead_persistido = True
         if ok_persist:
             st.success(msg_persist)
-        else:
+        elif err_persist:
             st.error(err_persist or "Falha ao registrar lead.")
 
+    if not st.session_state.agentmail_enviado:
+        scores = result["scores"]
         lead_mail = {
             "nome": lead.get("nome", ""),
             "empresa": lead.get("empresa", ""),
@@ -1107,6 +1323,7 @@ def render_relatorio() -> None:
             "dor": lead.get("dor", ""),
         }
         ok_mail, err_mail = send_agentmail_notification(lead_mail, scores, result, ts)
+        st.session_state.agentmail_enviado = True
         if ok_mail:
             inbox_disp = (os.getenv("AGENTMAIL_INBOX") or "").strip()
             notify_disp = (os.getenv("AGENTMAIL_NOTIFY_TO") or "").strip()
@@ -1149,6 +1366,8 @@ def main() -> None:
         render_landing()
     elif etapa == "formulario":
         render_formulario()
+    elif etapa == "preview":
+        render_preview()
     elif etapa == "relatorio":
         render_relatorio()
     else:
