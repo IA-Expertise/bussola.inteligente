@@ -45,7 +45,7 @@ LINKEDIN_IAEXPERTISE_URL = (os.getenv("LINKEDIN_IAEXPERTISE_URL") or "").strip()
 
 PRECO_FORMATADO = f"R$ {RELATORIO_PRECO_REAIS:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-DOR_SEBRAE_OPCOES = [
+DOR_NEGOCIO_OPCOES = [
     "Falta de controle financeiro",
     "Informalidade",
     "Contratação",
@@ -62,10 +62,10 @@ ESCOPO DO DIAGNÓSTICO (presença digital pública):
 Avalie como o negócio ou instituição aparece em Google (busca orgânica e intenção local), Google Meu Negócio / Google Maps,
 site, redes sociais informadas e canais de contato (ex.: WhatsApp). Não invente que acessou contas ou APIs: use apenas o que o usuário descreveu e inferências plausíveis a partir disso.
 
-Contexto Sebrae: quando a "dor" for finanças, contratação etc., trate na "dica de gestor" sem fingir que o gráfico mede fluxo de caixa ou RH.
+Quando o desafio informado for finanças, contratação etc., trate na "dica de gestor" sem fingir que o gráfico mede fluxo de caixa ou RH.
 
 TAREFA:
-Com base nos dados informados (empresa, segmento, site, link Google Maps/GMB, termo de busca, Instagram, outras redes opcionais, WhatsApp, dor Sebrae), produza um diagnóstico em JSON.
+Com base nos dados informados (empresa, segmento, site, link Google Maps/GMB, termo de busca, Instagram, outras redes opcionais, WhatsApp, maior desafio do negócio), produza um diagnóstico em JSON.
 
 NOTAS inteiras de 0 a 10:
 - atendimento — clareza e consistência dos canais de contato (WhatsApp, telefone/e-mail se citados), prontidão aparente.
@@ -80,7 +80,7 @@ CINCO blocos obrigatórios de texto (além de detalhes por eixo):
 2) caminhos_recomendados — liste de 4 a 6 caminhos PRIORITÁRIOS que a empresa pode traçar (curto/médio prazo). Use linhas começando com número (1. 2. 3.) ou traço (-).
    Cada item deve ser acionável e ligado aos dados informados.
 3) raio_x_realista — "raio-X" crítico da presença digital (sem floreio).
-4) dica_gestor — conselho prático alinhado à DOR SEBRAE escolhida pelo usuário (Sebrae como referência de contexto; não invente estatísticas exatas).
+4) dica_gestor — conselho prático alinhado ao maior desafio escolhido pelo usuário (não invente estatísticas exatas).
 5) oportunidades_iaexpertise — como Lia (atendimento no WhatsApp) e produção de conteúdo/vídeo com IA ajudam nos pontos citados.
 
 Para cada eixo, detalhes[NOME] explica a nota em um parágrafo curto.
@@ -618,7 +618,7 @@ def build_html_report(lead: dict, result: dict, fig: go.Figure) -> str:
       <span><strong>Segmento:</strong> {seg or "—"}</span>
       <span><strong>Site:</strong> {site or "—"}</span>
     </div>
-    <div class="meta"><span><strong>Desafio (Sebrae):</strong> {dor or "—"}</span></div>
+    <div class="meta"><span><strong>Desafio:</strong> {dor or "—"}</span></div>
     <div class="meta"><span><strong>Emitido em:</strong> {esc(when)}</span></div>
   </header>
 
@@ -676,7 +676,7 @@ def build_notification_bodies(
         f"WhatsApp: {lead.get('whatsapp', '')}",
         f"E-mail: {lead.get('email_cliente', '')}",
         f"Opt-in: {lead.get('optin', '')}",
-        f"Dor (Sebrae): {lead.get('dor', '')}",
+        f"Desafio: {lead.get('dor', '')}",
         "",
         "Notas:",
     ]
@@ -722,7 +722,7 @@ def build_notification_bodies(
             ("WhatsApp", lead.get("whatsapp", "")),
             ("E-mail", lead.get("email_cliente", "")),
             ("Opt-in", lead.get("optin", "")),
-            ("Dor (Sebrae)", lead.get("dor", "")),
+            ("Desafio", lead.get("dor", "")),
         ]
     )
     scores_rows = "".join(
@@ -1043,8 +1043,8 @@ def render_formulario() -> None:
         )
 
         dor = st.selectbox(
-            "Qual o maior desafio hoje? (referência Sebrae)",
-            options=DOR_SEBRAE_OPCOES,
+            "Qual o maior desafio hoje?",
+            options=DOR_NEGOCIO_OPCOES,
             index=4,
         )
 
