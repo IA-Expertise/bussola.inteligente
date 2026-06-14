@@ -43,24 +43,7 @@ LEADS_CSV = Path(__file__).resolve().parent / "leads.csv"
 
 LINKEDIN_IAEXPERTISE_URL = (os.getenv("LINKEDIN_IAEXPERTISE_URL") or "").strip()
 
-# Vídeo da landing — defina YOUTUBE_VIDEO_URL nas variáveis de ambiente (Railway / local).
-YOUTUBE_VIDEO_URL = (os.getenv("YOUTUBE_VIDEO_URL") or "").strip()
-
 PRECO_FORMATADO = f"R$ {RELATORIO_PRECO_REAIS:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-LANDING_EXPLAIN_HTML = """
-<p style="margin:0 0 1rem 0;line-height:1.65;color:#cbd5e1;">
-Muitas empresas são excelentes no que fazem, mas invisíveis para quem quer comprar.
-A <strong style="color:#f1f5f9;">Bússola Inteligente</strong> utiliza Inteligência Artificial para auditar sua vitrine digital
-e identificar exatamente onde você está perdendo clientes.
-</p>
-<p style="margin:0;line-height:1.65;color:#cbd5e1;">
-A análise se baseia nas <strong>5 maiores dores do microempreendedor brasileiro</strong> e em sinais de <strong>presença digital pública</strong>:
-<strong>Google</strong> (busca e Maps), <strong>Google Meu Negócio</strong>, <strong>site</strong> e <strong>redes sociais</strong> — o que qualquer pessoa vê sem login.
-Nosso diagnóstico é <strong>100% gratuito</strong>, seguro e focado em &quot;ajeitar a sua casa&quot;
-para você faturar mais. Não pedimos senhas ou acesso a contas; apenas o que você informa e o que é publicamente observável.
-</p>
-"""
 
 DOR_SEBRAE_OPCOES = [
     "Falta de controle financeiro",
@@ -835,7 +818,7 @@ def persist_lead(row: dict) -> tuple[bool, str, str | None]:
 
 def init_session() -> None:
     if "etapa" not in st.session_state:
-        st.session_state.etapa = "landing"
+        st.session_state.etapa = "formulario"
     if "lead_snap" not in st.session_state:
         st.session_state.lead_snap = {}
     if "diagnostico_result" not in st.session_state:
@@ -866,7 +849,8 @@ def get_logged_in_user() -> UserSession | None:
 
 
 def reset_para_landing() -> None:
-    st.session_state.etapa = "landing"
+    """Nova análise — volta ao formulário (LP externa fica em www)."""
+    st.session_state.etapa = "formulario"
     st.session_state.lead_snap = {}
     st.session_state.diagnostico_result = None
     st.session_state.lead_persistido = False
@@ -895,48 +879,20 @@ def render_footer() -> None:
     )
 
 
-def render_landing() -> None:
-    st.markdown('<p class="tagline-saph">IAExpertise</p>', unsafe_allow_html=True)
-    st.markdown("# Bússola Inteligente 🧭")
-    st.markdown(
-        '<p class="hero-sub">O mapa para tirar sua empresa do invisível e colocar no lucro.</p>',
-        unsafe_allow_html=True,
-    )
-
-    _, c_mid, _ = st.columns([1, 8, 1])
-    with c_mid:
-        if YOUTUBE_VIDEO_URL:
-            try:
-                st.video(YOUTUBE_VIDEO_URL)
-            except Exception:
-                st.info("Não foi possível incorporar o vídeo. Verifique `YOUTUBE_VIDEO_URL`.")
-                st.markdown(
-                    f'<p><a href="{html.escape(YOUTUBE_VIDEO_URL)}" target="_blank" '
-                    'rel="noopener">Abrir vídeo no YouTube</a></p>',
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.info("Configure a URL do vídeo em `YOUTUBE_VIDEO_URL` (variável de ambiente).")
-
-    st.markdown(
-        '<div class="card-saph" style="margin-top:1.25rem;">'
-        + LANDING_EXPLAIN_HTML
-        + "</div>",
-        unsafe_allow_html=True,
-    )
-
-    if st.button("Quero analisar meu negócio", type="primary", use_container_width=True):
-        st.session_state.etapa = "formulario"
-        st.rerun()
-
-    if BUSSOLA_LP_URL and "railway.app" not in BUSSOLA_LP_URL:
-        st.caption(f"Site: {BUSSOLA_LP_URL}")
+def _lp_externa_url() -> str | None:
+    url = (BUSSOLA_LP_URL or "").strip().rstrip("/")
+    if url and "railway.app" not in url:
+        return url + "/"
+    return None
 
 
 def render_formulario() -> None:
     c1, c2 = st.columns([1, 5])
     with c1:
-        if st.button("← Início"):
+        lp = _lp_externa_url()
+        if lp:
+            st.link_button("← Site", lp, use_container_width=True)
+        elif st.button("← Início"):
             reset_para_landing()
             st.rerun()
     st.markdown("## Use a Bússola Inteligente para corrigir a rota da sua empresa")
@@ -1578,9 +1534,7 @@ def main() -> None:
 
     etapa = st.session_state.etapa
 
-    if etapa == "landing":
-        render_landing()
-    elif etapa == "formulario":
+    if etapa == "formulario":
         render_formulario()
     elif etapa == "preview":
         render_preview()
@@ -1591,7 +1545,7 @@ def main() -> None:
     elif etapa == "relatorio":
         render_relatorio()
     else:
-        st.session_state.etapa = "landing"
+        st.session_state.etapa = "formulario"
         st.rerun()
 
     render_footer()

@@ -602,23 +602,30 @@
   </footer>
 
   <script>
-    /* Ajuste aqui se mudar app ou vídeo (mesmo ID do YOUTUBE_VIDEO_URL no Railway) */
+    /* Cole o mesmo valor de YOUTUBE_VIDEO_URL do Railway (URL completa ou só o ID). */
     var BUSSOLA_CONFIG = {
       APP_URL: "https://app.bussolainteligente.com.br/",
-      /* Fallback enquanto DNS do app propaga: */
       APP_URL_FALLBACK: "https://bussolainteligente-production.up.railway.app/",
-      YOUTUBE_VIDEO_ID: "jNQXAC9IVRw"
+      YOUTUBE_VIDEO_URL: "https://www.youtube.com/watch?v=jNQXAC9IVRw"
     };
+
+    function youtubeIdFromConfig(cfg) {
+      var raw = (cfg.YOUTUBE_VIDEO_URL || cfg.YOUTUBE_VIDEO_ID || "").trim();
+      if (!raw) return "";
+      if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+      var m = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|shorts\/|watch\?v=))([a-zA-Z0-9_-]{11})/);
+      return m ? m[1] : "";
+    }
 
     (function () {
       var appUrl = BUSSOLA_CONFIG.APP_URL || BUSSOLA_CONFIG.APP_URL_FALLBACK;
       document.querySelectorAll(".js-cta-app").forEach(function (el) {
         el.href = appUrl;
       });
+      var videoId = youtubeIdFromConfig(BUSSOLA_CONFIG);
       var iframe = document.getElementById("hero-video");
-      if (iframe && BUSSOLA_CONFIG.YOUTUBE_VIDEO_ID) {
-        iframe.src = "https://www.youtube.com/embed/" + BUSSOLA_CONFIG.YOUTUBE_VIDEO_ID
-          + "?rel=0&modestbranding=1";
+      if (iframe && videoId) {
+        iframe.src = "https://www.youtube.com/embed/" + videoId + "?rel=0&modestbranding=1";
       }
     })();
   </script>
