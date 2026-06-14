@@ -254,40 +254,42 @@ def inject_css() -> None:
         footer {{ visibility: hidden; }}
         .site-footer {{
             margin-top: 3rem;
-            padding: 1.75rem 1.25rem 2rem;
-            border-top: 1px solid rgba(15, 82, 186, 0.35);
+            margin-left: -1rem;
+            margin-right: -1rem;
+            padding: 2rem 1.25rem 2.25rem;
             text-align: center;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.85) 100%);
+            background: #003580;
             border-radius: 14px 14px 0 0;
+            border-top: 1px solid rgba(201, 162, 39, 0.25);
         }}
-        .site-footer .brand {{
-            color: {SAPPHIRE};
+        .site-footer .footer-brand {{
+            color: #fff;
             font-weight: 700;
-            font-size: 1.05rem;
-            letter-spacing: 0.04em;
+            font-size: 1rem;
             margin-bottom: 0.35rem;
         }}
-        .site-footer .author {{
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            margin: 0.5rem 0;
+        .site-footer .footer-tagline {{
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.92rem;
+            margin-bottom: 1rem;
+        }}
+        .site-footer .footer-legal {{
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.86rem;
+            line-height: 1.7;
+            margin: 0;
+        }}
+        .site-footer .footer-copy {{
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.55);
         }}
         .site-footer a {{
-            color: {SAPPHIRE};
+            color: #F5E6B8;
             font-weight: 600;
             text-decoration: none;
         }}
         .site-footer a:hover {{ text-decoration: underline; }}
-        .lgpd-badge {{
-            display: inline-block;
-            margin-top: 0.85rem;
-            padding: 0.45rem 0.65rem;
-            background: rgba(15, 82, 186, 0.15);
-            border: 1px solid rgba(15, 82, 186, 0.4);
-            border-radius: 8px;
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }}
         .preview-hero {{
             background: linear-gradient(135deg, rgba(15,82,186,.25) 0%, rgba(30,41,59,.8) 100%);
             border: 1px solid rgba(15, 82, 186, 0.5);
@@ -951,19 +953,18 @@ def reset_para_landing() -> None:
 
 
 def render_footer() -> None:
-    linkedin_html = ""
-    if LINKEDIN_IAEXPERTISE_URL:
-        linkedin_html = (
-            f'<p><a href="{html.escape(LINKEDIN_IAEXPERTISE_URL)}" target="_blank" '
-            'rel="noopener">IAExpertise no LinkedIn</a></p>'
-        )
     st.markdown(
-        f"""
+        """
 <div class="site-footer">
-  <div class="brand">IAExpertise</div>
-  <p class="author">Eduardo Augusto Sona — Jornalista e Especialista em IA</p>
-  {linkedin_html}
-  <p class="lgpd-badge">🔒 Dados protegidos (LGPD)</p>
+  <p class="footer-brand">Bússola Inteligente · IAExpertise</p>
+  <p class="footer-tagline">Ferramenta de apoio em presença digital</p>
+  <p class="footer-legal">
+    CNPJ 05.138.716/0001-73 ·
+    <a href="mailto:contato@iaexpertise.com.br">contato@iaexpertise.com.br</a>
+  </p>
+  <p class="footer-legal">Uma criação de Eduardo Augusto Sona — Vibe Coding Architet</p>
+  <p class="footer-legal">Dados tratados conforme LGPD</p>
+  <p class="footer-copy">© 2026 bussolainteligente.com.br / Eduardo Sona</p>
 </div>
 """,
         unsafe_allow_html=True,

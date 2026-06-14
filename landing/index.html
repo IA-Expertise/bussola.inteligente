@@ -199,6 +199,82 @@
       background: linear-gradient(135deg, #f5edd4, var(--gold-light));
       border-top: 1px solid rgba(201,162,39,.3);
       border-bottom: 1px solid rgba(201,162,39,.3);
+      padding: 2.25rem 0;
+    }
+    .band-gold-quote {
+      font-weight: 700;
+      color: #5c4a08;
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      line-height: 1.35;
+      max-width: 44rem;
+      margin: 0 auto;
+      letter-spacing: -.01em;
+    }
+    .band-gold-quote strong { color: var(--cobalt-dark); }
+    .band-gold-quote .line2 { display: block; margin-top: .35rem; }
+
+    .highlight-tool {
+      display: block;
+      margin-top: 1.35rem;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(135deg, rgba(0,71,171,.08), rgba(201,162,39,.15));
+      border-left: 4px solid var(--gold);
+      border-radius: 0 10px 10px 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--cobalt-dark);
+      line-height: 1.45;
+    }
+
+    .highlight-survival {
+      text-align: center;
+      color: var(--cobalt-dark);
+      font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+      font-weight: 700;
+      max-width: 46rem;
+      margin: 0 auto 2rem;
+      padding: 1.15rem 1.5rem;
+      background: linear-gradient(135deg, rgba(0,71,171,.06), rgba(201,162,39,.12));
+      border: 1px solid rgba(0,71,171,.15);
+      border-radius: 12px;
+      line-height: 1.5;
+    }
+
+    .cta-final h2 {
+      font-size: clamp(1.5rem, 3.5vw, 2rem);
+      line-height: 1.25;
+    }
+    .cta-final h2 em {
+      font-style: normal;
+      color: var(--gold-light);
+      letter-spacing: .06em;
+    }
+    .cta-final .cta-sub {
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    footer .footer-brand {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: .35rem;
+    }
+    footer .footer-tagline {
+      color: rgba(255,255,255,.85);
+      margin-bottom: 1rem;
+    }
+    footer .footer-legal {
+      color: rgba(255,255,255,.7);
+      font-size: .86rem;
+      line-height: 1.7;
+    }
+    footer .footer-legal a { color: var(--gold-light); text-decoration: none; }
+    footer .footer-legal a:hover { text-decoration: underline; }
+    footer .footer-copy {
+      margin-top: 1rem;
+      font-size: .8rem;
+      color: rgba(255,255,255,.55);
     }
     .band-cobalt h2, .band-cobalt p { color: #fff; }
     .band-cobalt p { opacity: .92; }
@@ -417,9 +493,9 @@
 
   <div class="band band-gold">
     <div class="container" style="text-align:center;">
-      <p style="font-weight:700;color:#7a5f0a;font-size:1.05rem;">
-        Aparecer no mundo digital deixou de ser marketing — é <strong>sobrevivência</strong>.
-        A Bússola mostra onde você está e para onde ir.
+      <p class="band-gold-quote">
+        Aparecer no mundo digital deixou de ser marketing —<br />
+        é <strong>sobrevivência</strong>. A Bússola mostra onde você está e para onde ir.
       </p>
     </div>
   </div>
@@ -429,12 +505,12 @@
       <h2 class="section-title">O método Bússola Inteligente</h2>
       <p class="section-sub">A IA enxerga seu negócio como o cliente enxerga — com olhar crítico e plano de ação.</p>
       <div class="method-box">
-        <p>
+        <p style="margin-top:1rem;">
           A <strong>Bússola Inteligente</strong> analisa, no primeiro momento, <strong>como seu cliente te enxerga na internet</strong>.
           Ela examina seu site, redes sociais e demais pontos públicos da sua presença digital, com olhar crítico,
           e entrega um <strong>relatório completo</strong> sobre sua visibilidade — e como ela pode ser melhorada.
         </p>
-        <p style="margin-top:1rem;font-weight:600;color:var(--cobalt);">
+        <p class="highlight-tool">
           É a ferramenta ideal para sua empresa crescer, aparecer e vender mais.
         </p>
       </div>
@@ -483,7 +559,9 @@
   <section id="publico">
     <div class="container">
       <h2 class="section-title">Para quem é</h2>
-      <p class="section-sub">Toda empresa que sabe: ser encontrado online é questão de sobrevivência.</p>
+      <p class="highlight-survival">
+        Para empresas que já entenderam o óbvio: no mercado atual, ser encontrado online é questão de sobrevivência.
+      </p>
       <div class="grid-2">
         <div class="card">
           <h3>🏢 Agências de marketing digital</h3>
@@ -568,8 +646,8 @@
 
   <div class="band band-cobalt cta-final">
     <div class="container">
-      <h2>Pronto para corrigir a rota?</h2>
-      <p>Leva poucos minutos. Preview grátis. Sem compromisso.</p>
+      <h2>Pronto para corrigir a sua <em>ROTA</em> rumo ao sucesso?</h2>
+      <p class="cta-sub">Leva poucos minutos. Preview grátis. Sem compromisso.</p>
       <a class="btn btn-gold js-cta-app" href="#">Acessar a Bússola Inteligente</a>
     </div>
   </div>
@@ -594,10 +672,17 @@
 
   <footer>
     <div class="container">
-      <p><strong>Bússola Inteligente</strong> · IAExpertise</p>
-      <p>Eduardo Augusto Sona — Jornalista e Especialista em IA</p>
-      <p style="margin-top:.75rem;">Ferramenta de apoio em presença digital · Dados tratados conforme LGPD</p>
-      <p style="margin-top:.5rem;font-size:.8rem;">© 2026 bussolainteligente.com.br</p>
+      <p class="footer-brand">Bússola Inteligente · IAExpertise</p>
+      <p class="footer-tagline">Ferramenta de apoio em presença digital</p>
+      <p class="footer-legal">
+        CNPJ 05.138.716/0001-73 ·
+        <a href="mailto:contato@iaexpertise.com.br">contato@iaexpertise.com.br</a>
+      </p>
+      <p class="footer-legal">
+        Uma criação de Eduardo Augusto Sona — Vibe Coding Architet
+      </p>
+      <p class="footer-legal">Dados tratados conforme LGPD</p>
+      <p class="footer-copy">© 2026 bussolainteligente.com.br / Eduardo Sona</p>
     </div>
   </footer>
 
