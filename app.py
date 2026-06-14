@@ -110,6 +110,86 @@ RESPONDA APENAS com JSON válido (sem markdown):
 """
 
 
+def render_splash() -> None:
+    """Tela de carregamento — evita flash de CSS/código no primeiro paint."""
+    st.markdown(
+        f"""
+        <style>
+        header[data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        section[data-testid="stSidebar"],
+        section.main > div.block-container {{
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }}
+        .stApp {{
+            background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 40%, #111827 100%) !important;
+        }}
+        .bussola-splash-wrap {{
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 40%, #111827 100%);
+            color: #f8fafc;
+            font-family: system-ui, sans-serif;
+        }}
+        .bussola-splash-wrap .icon {{ font-size: 2.5rem; line-height: 1; }}
+        .bussola-splash-wrap .title {{
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 0.65rem;
+            color: {SAPPHIRE};
+        }}
+        .bussola-splash-wrap .hint {{
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 0.35rem;
+        }}
+        .bussola-splash-spin {{
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(15, 82, 186, 0.25);
+            border-top-color: {SAPPHIRE};
+            border-radius: 50%;
+            animation: bussola-spin 0.75s linear infinite;
+            margin-top: 1.25rem;
+        }}
+        @keyframes bussola-spin {{ to {{ transform: rotate(360deg); }} }}
+        </style>
+        <div class="bussola-splash-wrap" aria-live="polite" aria-busy="true">
+          <div class="icon">🧭</div>
+          <div class="title">Bússola Inteligente</div>
+          <div class="hint">Carregando…</div>
+          <div class="bussola-splash-spin"></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def bootstrap_auth() -> bool:
+    """Inicializa cookie de sessão. False = aguardar próximo rerun do Streamlit."""
+    if st.session_state.get("_auth_ready"):
+        return True
+    if get_logged_in_user():
+        st.session_state._auth_ready = True
+        return True
+
+    restaurar_sessao_do_cookie()
+
+    if get_logged_in_user() or st.session_state.get("_auth_cookie_done"):
+        st.session_state._auth_ready = True
+        return True
+    return False
+
+
 def inject_css() -> None:
     st.markdown(
         f"""
@@ -1524,13 +1604,14 @@ def main() -> None:
         initial_sidebar_state="collapsed",
     )
     init_session()
-    inject_css()
 
-    if not get_logged_in_user() and not st.session_state.get("_auth_bootstrapped"):
-        st.session_state._auth_bootstrapped = True
-        restaurar_sessao_do_cookie()
-        if not get_logged_in_user():
+    if not st.session_state.get("_ui_ready"):
+        if not bootstrap_auth():
+            render_splash()
             st.rerun()
+        st.session_state._ui_ready = True
+
+    inject_css()
 
     etapa = st.session_state.etapa
 
