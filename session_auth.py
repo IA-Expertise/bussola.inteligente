@@ -51,11 +51,13 @@ def verify_session_token(token: str) -> str | None:
         return None
 
 
-@st.cache_resource
 def get_cookie_manager():
-    import extra_streamlit_components as stx
+    """Uma instância por sessão — não usar @st.cache_resource (CookieManager é widget)."""
+    if "_cookie_manager" not in st.session_state:
+        import extra_streamlit_components as stx
 
-    return stx.CookieManager(key="bussola_cookie_manager")
+        st.session_state._cookie_manager = stx.CookieManager(key="bussola_cookie_manager")
+    return st.session_state._cookie_manager
 
 
 def persist_login_cookie(user: UserSession) -> None:

@@ -110,24 +110,35 @@ RESPONDA APENAS com JSON válido (sem markdown):
 """
 
 
+SPLASH_HIDER_CSS = """
+<style>
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+section[data-testid="stSidebar"],
+section.main > div.block-container,
+div[data-testid="stAlert"],
+[data-testid="stException"],
+[data-testid="stStatusWidget"] {
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: none !important;
+}
+.stApp {
+    background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 40%, #111827 100%) !important;
+}
+</style>
+"""
+
+
 def render_splash() -> None:
     """Tela de carregamento — evita flash de CSS/código no primeiro paint."""
     st.markdown(
         f"""
+        {SPLASH_HIDER_CSS}
         <style>
-        header[data-testid="stHeader"],
-        [data-testid="stToolbar"],
-        section[data-testid="stSidebar"],
-        section.main > div.block-container {{
-            visibility: hidden !important;
-            height: 0 !important;
-            overflow: hidden !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }}
-        .stApp {{
-            background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 40%, #111827 100%) !important;
-        }}
         .bussola-splash-wrap {{
             position: fixed;
             inset: 0;
@@ -1606,6 +1617,7 @@ def main() -> None:
     init_session()
 
     if not st.session_state.get("_ui_ready"):
+        st.markdown(SPLASH_HIDER_CSS, unsafe_allow_html=True)
         if not bootstrap_auth():
             render_splash()
             st.rerun()

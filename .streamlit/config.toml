@@ -6,6 +6,10 @@ secondaryBackgroundColor = "#1e293b"
 textColor = "#f1f5f9"
 font = "sans serif"
 
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
+
 [server]
 headless = true
 address = "0.0.0.0"
