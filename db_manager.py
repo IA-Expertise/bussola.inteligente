@@ -164,3 +164,172 @@ def verificar_login(email: str, senha: str) -> UserSession | None:
     if not row or not verify_password(senha, row[5]):
         return None
     return _row_to_session(row[:5])
+
+
+def obter_asaas_customer_id(user_id: str) -> str | None:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT asaas_customer_id FROM public.users WHERE id = %s",
+                (user_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if row and row[0]:
+        return str(row[0]).strip()
+    return None
+
+
+def atualizar_asaas_customer_id(user_id: str, customer_id: str) -> None:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE public.users SET asaas_customer_id = %s WHERE id = %s",
+                (customer_id, user_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def registrar_pagamento_pendente(
+    *,
+    user_id: str,
+    asaas_payment_id: str,
+    asaas_customer_id: str,
+    valor_centavos: int,
+    external_reference: str,
+    invoice_url: str,
+    pix_payload: str,
+    status_asaas: str,
+) -> str:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO public.pagamentos (
+                    user_id, asaas_payment_id, asaas_customer_id, valor_centavos,
+                    status_asaas, external_reference, invoice_url, pix_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    user_id,
+                    asaas_payment_id,
+                    asaas_customer_id,
+                    valor_centavos,
+                    status_asaas,
+                    external_reference,
+                    invoice_url or None,
+                    pix_payload or None,
+                ),
+            )
+            row = cur.fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    return str(row[0])
+
+
+def buscar_pagamento_por_id(pagamento_id: str) -> dict | None:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, user_id, asaas_payment_id, status_asaas, relatorio_liberado,
+                       invoice_url, pix_payload, external_reference
+                FROM public.pagamentos WHERE id = %s
+                """,
+                (pagamento_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    return {
+        "id": str(row[0]),
+        "user_id": str(row[1]),
+        "asaas_payment_id": row[2],
+        "status_asaas": row[3],
+        "relatorio_liberado": row[4],
+        "invoice_url": row[5] or "",
+        "pix_payload": row[6] or "",
+        "external_reference": row[7],
+    }
+
+
+def buscar_pagamento_por_asaas_id(asaas_payment_id: str) -> dict | None:
+    conn = _connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, user_id, asaas_payment_id, status_asaas, relatorio_liberado,
+                       external_reference
+                FROM public.pagamentos WHERE asaas_payment_id = %s
+                """,
+                (asaas_payment_id,),
+            )
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+    return {
+        "id": str(row[0]),
+        "user_id": str(row[1]),
+        "asaas_payment_id": row[2],
+        "status_asaas": row[3],
+        "relatorio_liberado": row[4],
+        "external_reference": row[5],
+    }
+
+
+def liquidar_pagamento_por_asaas_id(
+    asaas_payment_id: str,
+    *,
+    status_asaas: str = "RECEIVED",
+) -> bool:
+    """Marca relatório liberado. Idempotente. Retorna True se liberado (novo ou já estava)."""
+    conn = _connect()
+    try:
+        conn.autocommit = False
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, relatorio_liberado FROM public.pagamentos
+                WHERE asaas_payment_id = %s FOR UPDATE
+                """,
+                (asaas_payment_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                conn.rollback()
+                return False
+            if row[1]:
+                conn.commit()
+                return True
+            cur.execute(
+                """
+                UPDATE public.pagamentos
+                SET relatorio_liberado = true,
+                    status_asaas = %s,
+                    paid_at = NOW()
+                WHERE asaas_payment_id = %s
+                """,
+                (status_asaas, asaas_payment_id),
+            )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+

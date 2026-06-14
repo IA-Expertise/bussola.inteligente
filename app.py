@@ -19,7 +19,8 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 from database import init_db
-from db_manager import UserSession, cadastrar_usuario, verificar_login
+from db_manager import UserSession, buscar_pagamento_por_id, cadastrar_usuario, verificar_login
+from payments_asaas import criar_cobranca_relatorio, obter_pix_qrcode, sincronizar_pagamento_local
 from session_auth import login_user, logout_user, restaurar_sessao_do_cookie
 
 from config import (
@@ -849,6 +850,15 @@ def init_session() -> None:
         st.session_state.user = None
     if "auth_return" not in st.session_state:
         st.session_state.auth_return = "checkout"
+    if "checkout_pagamento_id" not in st.session_state:
+        st.session_state.checkout_pagamento_id = None
+
+
+def desbloquear_relatorio_apos_pagamento() -> None:
+    st.session_state.relatorio_desbloqueado = True
+    st.session_state.lead_persistido = False
+    st.session_state.agentmail_enviado = False
+    st.session_state.etapa = "relatorio"
 
 
 def get_logged_in_user() -> UserSession | None:
@@ -862,6 +872,7 @@ def reset_para_landing() -> None:
     st.session_state.lead_persistido = False
     st.session_state.agentmail_enviado = False
     st.session_state.relatorio_desbloqueado = False
+    st.session_state.checkout_pagamento_id = None
 
 
 def render_footer() -> None:
@@ -1224,8 +1235,7 @@ def render_preview() -> None:
 
     if BUSSOLA_DEV_UNLOCK_RELATORIO:
         if st.button("🔧 [DEV] Ver relatório completo sem pagamento", use_container_width=True):
-            st.session_state.relatorio_desbloqueado = True
-            st.session_state.etapa = "relatorio"
+            desbloquear_relatorio_apos_pagamento()
             st.rerun()
 
     if not st.session_state.lead_persistido:
@@ -1318,6 +1328,13 @@ def render_checkout() -> None:
         st.rerun()
         return
 
+    if not (os.getenv("ASAAS_API_KEY") or "").strip():
+        st.error("Pagamento indisponível: configure ASAAS_API_KEY no servidor.")
+        if st.button("← Voltar ao preview"):
+            st.session_state.etapa = "preview"
+            st.rerun()
+        return
+
     r1, _ = st.columns([1, 5])
     with r1:
         if st.button("← Preview", key="checkout_voltar_preview"):
@@ -1337,18 +1354,76 @@ def render_checkout() -> None:
         unsafe_allow_html=True,
     )
 
-    st.info(
-        "Pagamento via Pix (Asaas) será habilitado na **Fase 3**. "
-        "Sua conta já está criada — na próxima atualização você paga aqui e recebe o relatório na hora."
-    )
+    pag_id = st.session_state.checkout_pagamento_id
+    cobranca_row = buscar_pagamento_por_id(pag_id) if pag_id else None
+
+    if cobranca_row and cobranca_row.get("user_id") != user.id:
+        st.session_state.checkout_pagamento_id = None
+        cobranca_row = None
+
+    if cobranca_row and cobranca_row.get("relatorio_liberado"):
+        desbloquear_relatorio_apos_pagamento()
+        st.rerun()
+        return
+
+    if not cobranca_row:
+        if st.button("Gerar cobrança Pix", type="primary", use_container_width=True, key="gerar_pix"):
+            with st.spinner("Gerando Pix no Asaas…"):
+                try:
+                    cob = criar_cobranca_relatorio(user)
+                    st.session_state.checkout_pagamento_id = cob.pagamento_id
+                    st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+    else:
+        st.success("Pix gerado. Pague pelo app do banco e clique em **Já paguei** abaixo.")
+        try:
+            payload, img_b64 = obter_pix_qrcode(cobranca_row["asaas_payment_id"])
+            if img_b64:
+                st.image(f"data:image/png;base64,{img_b64}", width=220)
+            if payload:
+                st.text_area(
+                    "Pix copia e cola",
+                    value=payload,
+                    height=100,
+                    key="pix_payload_display",
+                )
+        except Exception:
+            if cobranca_row.get("pix_payload"):
+                st.text_area(
+                    "Pix copia e cola",
+                    value=cobranca_row["pix_payload"],
+                    height=100,
+                    key="pix_payload_display_fallback",
+                )
+        if cobranca_row.get("invoice_url"):
+            st.link_button(
+                "Abrir página de pagamento Asaas",
+                cobranca_row["invoice_url"],
+                use_container_width=True,
+            )
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Já paguei — verificar", type="primary", use_container_width=True):
+                ok, err = sincronizar_pagamento_local(cobranca_row["id"])
+                if ok:
+                    desbloquear_relatorio_apos_pagamento()
+                    st.success("Pagamento confirmado! Abrindo relatório…")
+                    st.rerun()
+                else:
+                    st.warning(err or "Pagamento ainda não identificado. Aguarde alguns segundos e tente de novo.")
+        with c2:
+            if st.button("Gerar novo Pix", use_container_width=True):
+                st.session_state.checkout_pagamento_id = None
+                st.rerun()
 
     if BUSSOLA_DEV_UNLOCK_RELATORIO:
-        if st.button("🔧 [DEV] Liberar relatório completo", type="primary", use_container_width=True):
-            st.session_state.relatorio_desbloqueado = True
-            st.session_state.etapa = "relatorio"
+        if st.button("🔧 [DEV] Liberar relatório completo", use_container_width=True):
+            desbloquear_relatorio_apos_pagamento()
             st.rerun()
 
-    if st.button("Voltar ao preview", use_container_width=True):
+    if st.button("Voltar ao preview", use_container_width=True, key="checkout_voltar2"):
         st.session_state.etapa = "preview"
         st.rerun()
 

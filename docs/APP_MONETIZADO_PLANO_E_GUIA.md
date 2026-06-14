@@ -68,34 +68,14 @@ repositório `IA-Expertise/cpfalerta` + arquivo complementar [`INSTRUCAO_AGENTE_
 
 ### Fase 3 — Asaas Pix + webhook (4–6 dias)
 
-**Dois serviços Railway** (obrigatório — ver [`INSTRUCAO_AGENTE_CADASTRO_LOGIN_WEBHOOK_ASAAS.md`](./INSTRUCAO_AGENTE_CADASTRO_LOGIN_WEBHOOK_ASAAS.md)):
+- [x] `payments_asaas.py` — criar cobrança Pix, consultar status, “Já paguei”
+- [x] `webhook_asaas.py` — Flask POST `/webhook/asaas` + `/health`
+- [x] `scripts/railway_start.py` + `Procfile` — app vs webhook via `BUSSOLA_SERVICE`
+- [x] Tabela `public.pagamentos` (`sql/migrations/003_pagamentos.sql`)
+- [x] Checkout Streamlit: gerar Pix, copia e cola, verificar pagamento, liberar relatório
+- [ ] **Você:** 2º serviço Railway + webhook Asaas v3 — ver `docs/RAILWAY_FASE3_DEPLOY.md`
 
-| Serviço | `{PRODUTO}_SERVICE` | Processo |
-|---------|---------------------|----------|
-| `bussola-inteligente` | ausente ou `app` | Streamlit |
-| `bussola-webhook` | `webhook` | `gunicorn webhook_asaas:app` |
-
-**No app (Streamlit):**
-
-1. Criar/garantir `asaas_customer_id` (API `POST /v3/customers`).
-2. Criar cobrança `POST /v3/payments` — valor **1990** centavos, `billingType: PIX`.
-3. **`externalReference` obrigatório** — ex.: `bussola:pagamento:{uuid}` ou `user_id:diagnostico_id`.
-4. Registrar linha em `pagamentos` (status `PENDING`).
-5. Exibir QR / copia e cola + botão **“Já paguei”** (consulta API — fallback se webhook atrasar).
-6. **Só após confirmação:** rodar IA completa (se quiser economizar API) **ou** liberar relatório já em cache associado ao `payment_id`.
-
-**No webhook (Flask):**
-
-1. `POST /webhook/asaas` — validar header `asaas-access-token` = `ASAAS_WEBHOOK_TOKEN`.
-2. Eventos: `PAYMENT_RECEIVED` / `PAYMENT_CONFIRMED` (v3).
-3. Parse JSON **e** `application/x-www-form-urlencoded` (Asaas envia os dois formatos).
-4. Idempotência: `pagamentos.asaas_payment_id` UNIQUE + flag `relatorio_liberado`.
-5. Responder **200** rápido; liquidação **síncrona** (sem thread daemon).
-6. Ping sem `payment.id` → 200 `{"ping": true}`.
-
-**Entrega:** Pix pago → relatório completo + download HTML.
-
-**Estimativa acumulada:** +4–6 dias.
+**Entrega:** Pix pago → relatório completo liberado.
 
 ---
 
