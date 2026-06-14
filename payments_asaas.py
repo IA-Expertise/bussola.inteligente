@@ -166,6 +166,9 @@ def obter_pix_qrcode(asaas_payment_id: str) -> tuple[str, str]:
         (pix.get("payload") or "").strip(),
         (pix.get("encodedImage") or "").strip(),
     )
+
+
+def sincronizar_pagamento_local(pagamento_id: str) -> tuple[bool, str | None]:
     """Consulta Asaas e liquida localmente se pago. Retorna (liberado, erro)."""
     row = buscar_pagamento_por_id(pagamento_id)
     if not row:
