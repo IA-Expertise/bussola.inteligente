@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bússola Inteligente — Diagnóstico de visibilidade digital | IAExpertise</title>
-  <meta name="description" content="Descubra em minutos o tamanho do buraco na sua vitrine digital: Google, site e redes. Preview grátis. Relatório completo com plano de ação por R$ 19,90." />
+  <title>Bússola Inteligente — Corrija a rota do seu negócio na internet | IAExpertise</title>
+  <meta name="description" content="Preview grátis da sua visibilidade digital. Relatório completo com IA por R$ 19,90 — sem assinatura. Pix, cartão e boleto. Ideal para empresas, agências e profissionais." />
+  <meta name="keywords" content="visibilidade digital, diagnóstico marketing, Google Meu Negócio, presença digital, IA para empresas, Bússola Inteligente" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://www.bussolainteligente.com.br/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_BR" />
-  <meta property="og:title" content="Bússola Inteligente — Visibilidade digital para micro e pequenas empresas" />
-  <meta property="og:description" content="Preview grátis do mapa de maturidade digital. Relatório completo com prioridades e plano executável." />
+  <meta property="og:title" content="Bússola Inteligente — Corrija a rota do seu negócio" />
+  <meta property="og:description" content="Veja como seu cliente te enxerga na internet. Preview grátis. Relatório completo R$ 19,90." />
   <meta property="og:url" content="https://www.bussolainteligente.com.br/" />
   <meta property="og:site_name" content="Bússola Inteligente" />
   <script type="application/ld+json">
@@ -24,101 +25,602 @@
       "@type": "Offer",
       "price": "19.90",
       "priceCurrency": "BRL",
-      "description": "Relatório completo de visibilidade digital"
+      "description": "Relatório completo de visibilidade digital — pagamento avulso, sem assinatura"
     },
-    "provider": {
-      "@type": "Organization",
-      "name": "IAExpertise"
-    },
-    "description": "Diagnóstico de presença digital para micro e pequenas empresas no Brasil."
+    "provider": { "@type": "Organization", "name": "IAExpertise" }
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
   <style>
-    :root { --saph: #0F52BA; --bg: #0a0f1a; --card: rgba(30,41,59,.65); --text: #f1f5f9; --muted: #94a3b8; }
+    :root {
+      --cobalt: #0047AB;
+      --cobalt-dark: #003580;
+      --gold: #C9A227;
+      --gold-light: #F5E6B8;
+      --white: #ffffff;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'DM Sans', system-ui, sans-serif; background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 45%, #111827 100%); color: var(--text); line-height: 1.6; min-height: 100vh; }
-    a { color: #93c5fd; }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
-    .tag { color: var(--saph); font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { font-size: clamp(1.85rem, 5vw, 2.75rem); letter-spacing: -.03em; margin: .5rem 0; line-height: 1.15; }
-    .sub { color: var(--muted); font-size: 1.1rem; max-width: 36rem; margin-bottom: 1.75rem; }
-    .cta { display: inline-block; background: linear-gradient(135deg, #0a3d8c, var(--saph) 55%, #3b7ddd); color: #fff !important; text-decoration: none; font-weight: 700; padding: .9rem 1.75rem; border-radius: 10px; box-shadow: 0 4px 18px rgba(15,82,186,.45); margin: .5rem 0 2rem; }
-    .cta:hover { filter: brightness(1.08); }
-    .price { font-size: .95rem; color: var(--muted); margin-bottom: 2.5rem; }
-    .price strong { color: #e2e8f0; }
-    section { margin: 2.5rem 0; }
-    h2 { font-size: 1.35rem; margin-bottom: 1rem; color: #e2e8f0; }
-    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-    .card { background: var(--card); border: 1px solid rgba(15,82,186,.35); border-radius: 14px; padding: 1.25rem; }
-    .card h3 { font-size: 1rem; margin-bottom: .5rem; color: #cbd5e1; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--white);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    a { color: var(--cobalt); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.25rem; }
+
+    /* Header */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: .85rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 12px rgba(0,71,171,.06);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--cobalt);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .logo span { font-size: 1.35rem; }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--cobalt-dark), var(--cobalt));
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 700;
+      padding: .75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: .95rem;
+      box-shadow: 0 4px 14px rgba(0,71,171,.35);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,71,171,.4); }
+    .btn-gold {
+      background: linear-gradient(135deg, #a68520, var(--gold));
+      box-shadow: 0 4px 14px rgba(201,162,39,.4);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--cobalt) !important;
+      border: 2px solid var(--cobalt);
+      box-shadow: none;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 3rem 0 2.5rem;
+      background: linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+    @media (min-width: 900px) {
+      .hero-grid { grid-template-columns: 1.1fr 1fr; }
+    }
+    .eyebrow {
+      color: var(--gold);
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: .75rem;
+    }
+    h1 {
+      font-size: clamp(1.85rem, 4.5vw, 2.65rem);
+      line-height: 1.15;
+      letter-spacing: -.02em;
+      color: var(--cobalt-dark);
+      margin-bottom: 1rem;
+    }
+    h1 em { font-style: normal; color: var(--cobalt); }
+    .hero-lead {
+      font-size: 1.12rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      max-width: 32rem;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      margin-bottom: 1.75rem;
+    }
+    .badge {
+      background: var(--gold-light);
+      color: #7a5f0a;
+      font-size: .82rem;
+      font-weight: 700;
+      padding: .4rem .85rem;
+      border-radius: 999px;
+      border: 1px solid rgba(201,162,39,.35);
+    }
+    .badge-blue {
+      background: rgba(0,71,171,.08);
+      color: var(--cobalt);
+      border-color: rgba(0,71,171,.2);
+    }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+    .price-line { font-size: .9rem; color: var(--muted); margin-top: 1rem; }
+    .price-line strong { color: var(--cobalt); font-size: 1.15rem; }
+
+    /* Video 16:9 */
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      height: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,71,171,.15);
+      border: 2px solid var(--border);
+      background: #000;
+    }
+    .video-wrap iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: 0;
+    }
+
+    /* Bands */
+    .band {
+      padding: 2.75rem 0;
+    }
+    .band-cobalt {
+      background: linear-gradient(135deg, var(--cobalt-dark), var(--cobalt));
+      color: #fff;
+    }
+    .band-gold {
+      background: linear-gradient(135deg, #f5edd4, var(--gold-light));
+      border-top: 1px solid rgba(201,162,39,.3);
+      border-bottom: 1px solid rgba(201,162,39,.3);
+    }
+    .band-cobalt h2, .band-cobalt p { color: #fff; }
+    .band-cobalt p { opacity: .92; }
+
+    section { padding: 3rem 0; }
+    section.alt { background: var(--bg); }
+    h2.section-title {
+      font-size: clamp(1.4rem, 3vw, 1.85rem);
+      color: var(--cobalt-dark);
+      margin-bottom: .5rem;
+      text-align: center;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      max-width: 40rem;
+      margin: 0 auto 2rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .grid-2 {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .card h3 {
+      font-size: 1.05rem;
+      color: var(--cobalt);
+      margin-bottom: .5rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
     .card p { color: var(--muted); font-size: .95rem; }
-    .steps { counter-reset: step; list-style: none; }
-    .steps li { counter-increment: step; padding: .75rem 0 .75rem 2.5rem; position: relative; color: var(--muted); border-bottom: 1px solid rgba(15,82,186,.15); }
-    .steps li::before { content: counter(step); position: absolute; left: 0; width: 1.75rem; height: 1.75rem; background: var(--saph); color: #fff; border-radius: 50%; font-size: .85rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-    .faq dt { font-weight: 600; color: #e2e8f0; margin-top: 1rem; }
-    .faq dd { color: var(--muted); margin: .35rem 0 0; }
-    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(15,82,186,.2); font-size: .85rem; color: var(--muted); }
-    .compass { font-size: 1.5rem; }
+    .card-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      background: rgba(0,71,171,.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: .75rem;
+    }
+
+    .method-box {
+      background: var(--white);
+      border-left: 4px solid var(--gold);
+      padding: 1.75rem 2rem;
+      border-radius: 0 12px 12px 0;
+      box-shadow: 0 4px 20px rgba(0,71,171,.08);
+      max-width: 52rem;
+      margin: 0 auto;
+    }
+    .method-box p { color: var(--text); font-size: 1.05rem; }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      max-width: 36rem;
+      margin: 0 auto;
+    }
+    .steps li {
+      counter-increment: step;
+      padding: 1rem 0 1rem 3rem;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .steps li:last-child { border-bottom: none; }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      width: 2rem;
+      height: 2rem;
+      background: var(--cobalt);
+      color: #fff;
+      border-radius: 50%;
+      font-size: .9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .steps li strong { color: var(--text); }
+
+    .audience-tag {
+      display: inline-block;
+      background: rgba(0,71,171,.07);
+      color: var(--cobalt);
+      font-size: .78rem;
+      font-weight: 600;
+      padding: .25rem .6rem;
+      border-radius: 4px;
+      margin: .2rem .15rem 0 0;
+    }
+
+    .pay-icons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .pay-icons span {
+      background: var(--white);
+      border: 1px solid var(--border);
+      padding: .5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--cobalt-dark);
+    }
+
+    .pricing-card {
+      text-align: center;
+      max-width: 420px;
+      margin: 0 auto;
+      border: 2px solid var(--gold);
+      background: linear-gradient(180deg, #fffdf7, #fff);
+    }
+    .pricing-card .amount {
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: var(--cobalt);
+      line-height: 1;
+    }
+    .pricing-card .amount small { font-size: 1rem; font-weight: 600; }
+    .pricing-card ul {
+      list-style: none;
+      text-align: left;
+      margin: 1.25rem 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .pricing-card li { padding: .35rem 0; padding-left: 1.5rem; position: relative; }
+    .pricing-card li::before { content: "✓"; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+
+    .faq { max-width: 40rem; margin: 0 auto; }
+    .faq dt { font-weight: 700; color: var(--cobalt-dark); margin-top: 1.25rem; }
+    .faq dd { color: var(--muted); margin-top: .35rem; font-size: .95rem; }
+
+    .cta-final { text-align: center; padding: 3.5rem 0; }
+    .cta-final h2 { color: #fff; margin-bottom: .75rem; }
+    .cta-final p { color: rgba(255,255,255,.9); margin-bottom: 1.5rem; max-width: 28rem; margin-left: auto; margin-right: auto; }
+
+    footer {
+      background: var(--cobalt-dark);
+      color: rgba(255,255,255,.75);
+      padding: 2rem 0;
+      font-size: .88rem;
+      text-align: center;
+    }
+    footer strong { color: #fff; }
+    footer a { color: var(--gold-light); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <p class="tag">IAExpertise</p>
-    <h1><span class="compass">🧭</span> Bússola Inteligente</h1>
-    <p class="sub">O mapa para sair do invisível digital. Veja em minutos onde sua empresa perde clientes no Google, no site e nas redes — e o que priorizar primeiro.</p>
-    <a class="cta" href="https://bussolainteligente-production.up.railway.app/" id="cta-app">Ver meu preview grátis</a>
-    <p class="price">Preview <strong>grátis</strong> · Relatório completo com plano de ação: <strong>R$ 19,90</strong> (Pix)</p>
 
-    <section>
-      <h2>O problema</h2>
-      <div class="grid">
-        <div class="card"><h3>Invisível na busca</h3><p>Muitas empresas excelentes não aparecem quando o cliente pesquisa no Google ou Maps.</p></div>
-        <div class="card"><h3>Esforço no lugar errado</h3><p>Sem diagnóstico, time e dono gastam energia em ações que não movem a agulha.</p></div>
-        <div class="card"><h3>Vitrine inconsistente</h3><p>Site, redes e Google Meu Negócio contam histórias diferentes — e a confiança cai.</p></div>
+  <header>
+    <div class="container header-inner">
+      <a class="logo" href="/"><span>🧭</span> Bússola Inteligente</a>
+      <a class="btn js-cta-app" href="#">Preview grátis</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="eyebrow">IAExpertise · Inteligência Artificial aplicada</p>
+        <h1>Corrija a rota do seu negócio com a <em>Bússola Inteligente</em></h1>
+        <p class="hero-lead">
+          Descubra em minutos como seus clientes te enxergam na internet — e receba um plano claro
+          para melhorar site, Google, redes e vitrine digital.
+        </p>
+        <div class="badges">
+          <span class="badge">Preview 100% grátis</span>
+          <span class="badge badge-blue">Relatório R$ 19,90</span>
+          <span class="badge">Sem assinatura</span>
+        </div>
+        <div class="hero-cta">
+          <a class="btn btn-gold js-cta-app" href="#">Ver meu preview grátis</a>
+          <a class="btn btn-outline" href="#como-funciona">Como funciona</a>
+        </div>
+        <p class="price-line">Relatório completo com consultoria em IA: <strong>R$ 19,90</strong> · pagamento avulso</p>
       </div>
-    </section>
-
-    <section>
-      <h2>Como funciona</h2>
-      <ol class="steps">
-        <li>Você informa dados públicos do negócio (sem senhas).</li>
-        <li>A Bússola gera um <strong>preview gratuito</strong> com mapa de maturidade.</li>
-        <li>Para o plano completo, desbloqueie o relatório com análise detalhada e exportação.</li>
-      </ol>
-    </section>
-
-    <section>
-      <h2>O que você recebe no relatório completo</h2>
-      <div class="grid">
-        <div class="card"><h3>Radar 0–10</h3><p>Cinco eixos: Google/local, visual, atendimento, tecnologia e autoridade.</p></div>
-        <div class="card"><h3>Prioridades claras</h3><p>Caminhos recomendados em linguagem simples, não jargão técnico.</p></div>
-        <div class="card"><h3>Exportável</h3><p>HTML para arquivar ou imprimir em PDF pelo navegador.</p></div>
+      <div>
+        <div class="video-wrap">
+          <iframe
+            id="hero-video"
+            title="Bússola Inteligente — apresentação"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+        <p style="text-align:center;font-size:.85rem;color:var(--muted);margin-top:.75rem;">
+          Veja em 2 minutos o que a Bússola faz pelo seu negócio
+        </p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section>
-      <h2>Perguntas frequentes</h2>
-      <dl class="faq">
-        <dt>Preciso dar senha do Instagram ou Google?</dt>
-        <dd>Não. Usamos apenas o que é público e o que você informa voluntariamente.</dd>
-        <dt>O preview é realmente grátis?</dt>
-        <dd>Sim. Você vê o mapa e um diagnóstico inicial. O relatório completo é pago.</dd>
-        <dt>Para quem é?</dt>
-        <dd>Micro e pequenas empresas que querem clareza sobre presença digital e vendas online.</dd>
-        <dt>Substitui consultoria?</dt>
-        <dd>É apoio educacional e de planejamento. Para execução profunda, a IAExpertise oferece consultoria.</dd>
-      </dl>
-    </section>
-
-    <a class="cta" href="https://bussolainteligente-production.up.railway.app/">Começar preview grátis</a>
-
-    <footer>
-      <p><strong>Bússola Inteligente</strong> · IAExpertise · Eduardo Augusto Sona</p>
-      <p>Ferramenta de apoio à decisão em presença digital. Dados tratados conforme LGPD.</p>
-    </footer>
+  <div class="band band-gold">
+    <div class="container" style="text-align:center;">
+      <p style="font-weight:700;color:#7a5f0a;font-size:1.05rem;">
+        Aparecer no mundo digital deixou de ser marketing — é <strong>sobrevivência</strong>.
+        A Bússola mostra onde você está e para onde ir.
+      </p>
+    </div>
   </div>
-  <!-- Ao publicar o domínio: atualize canonical, og:url, sitemap.xml e href dos CTAs para https://app.seudominio.com.br/ -->
+
+  <section id="metodo">
+    <div class="container">
+      <h2 class="section-title">O método Bússola Inteligente</h2>
+      <p class="section-sub">A IA enxerga seu negócio como o cliente enxerga — com olhar crítico e plano de ação.</p>
+      <div class="method-box">
+        <p>
+          A <strong>Bússola Inteligente</strong> analisa, no primeiro momento, <strong>como seu cliente te enxerga na internet</strong>.
+          Ela examina seu site, redes sociais e demais pontos públicos da sua presença digital, com olhar crítico,
+          e entrega um <strong>relatório completo</strong> sobre sua visibilidade — e como ela pode ser melhorada.
+        </p>
+        <p style="margin-top:1rem;font-weight:600;color:var(--cobalt);">
+          É a ferramenta ideal para sua empresa crescer, aparecer e vender mais.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="container">
+      <h2 class="section-title">Por que usar a Bússola</h2>
+      <p class="section-sub">Consultoria em formato de relatório — sem mensalidade, sem burocracia.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3>Rápido e simples</h3>
+          <p>Preencha os dados públicos do negócio (sem senhas). Em minutos você vê o preview e, se quiser, desbloqueia o relatório completo.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💡</div>
+          <h3>IA com olhar de consultor</h3>
+          <p>Radar de maturidade, prioridades e caminhos recomendados em linguagem clara — não jargão técnico vazio.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💰</div>
+          <h3>Preço justo, sem assinatura</h3>
+          <p>Preview grátis. Relatório completo por <strong>R$ 19,90</strong>, pagamento único. Volte nos meses seguintes para acompanhar a evolução.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔒</div>
+          <h3>Seguro e transparente</h3>
+          <p>Não pedimos senha de Instagram, Google ou e-mail corporativo. Só o que é público e o que você informa.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📄</div>
+          <h3>Relatório exportável</h3>
+          <p>Leve para reuniões, sócios ou clientes. HTML/PDF pelo navegador — ideal para agências entregarem mensalmente.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💳</div>
+          <h3>Pague como preferir</h3>
+          <p>Pix, cartão de crédito ou boleto via Asaas. Confirmação rápida e entrega na hora após o pagamento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="publico">
+    <div class="container">
+      <h2 class="section-title">Para quem é</h2>
+      <p class="section-sub">Toda empresa que sabe: ser encontrado online é questão de sobrevivência.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>🏢 Agências de marketing digital</h3>
+          <p><strong>Pré-venda:</strong> diagnostique o prospect antes da proposta. <strong>Entrega recorrente:</strong> envie um relatório mensal ao cliente e mostre evolução da visibilidade.</p>
+          <span class="audience-tag">Pré-venda</span>
+          <span class="audience-tag">Retainer</span>
+        </div>
+        <div class="card">
+          <h3>☁️ SaaS e tecnologia</h3>
+          <p>Valide posicionamento digital, autoridade e consistência da vitrine antes de campanhas de aquisição.</p>
+          <span class="audience-tag">Startups</span>
+          <span class="audience-tag">B2B</span>
+        </div>
+        <div class="card">
+          <h3>🛒 Comércio e vendas online</h3>
+          <p>Lojas, e-commerce e varejo: descubra gaps no Google, site e redes que impedem a conversão.</p>
+          <span class="audience-tag">E-commerce</span>
+          <span class="audience-tag">Varejo</span>
+        </div>
+        <div class="card">
+          <h3>⚖️ Profissionais liberais</h3>
+          <p>Advogados, consultórios médicos, contadores, arquitetos — credibilidade digital é a primeira consulta que o cliente faz.</p>
+          <span class="audience-tag">Advocacia</span>
+          <span class="audience-tag">Saúde</span>
+        </div>
+        <div class="card">
+          <h3>🏭 Micro, pequena e grande empresa</h3>
+          <p>De MEI a corporações regionais: o mesmo diagnóstico objetivo para alinhar marketing, vendas e diretoria.</p>
+          <span class="audience-tag">MEI</span>
+          <span class="audience-tag">PME</span>
+        </div>
+        <div class="card">
+          <h3>📍 Comerciantes locais</h3>
+          <p>Google Maps, busca local e WhatsApp: saiba se quem procura na sua região realmente te encontra.</p>
+          <span class="audience-tag">Google / Local</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="alt">
+    <div class="container">
+      <h2 class="section-title">Como funciona</h2>
+      <ol class="steps">
+        <li><strong>Preview grátis</strong> — informe site, redes e dados do negócio (sem senhas).</li>
+        <li><strong>Mapa de maturidade</strong> — veja radar, prioridade #1 e o tamanho do gap na vitrine digital.</li>
+        <li><strong>Desbloqueie o relatório</strong> — R$ 19,90 via Pix, cartão ou boleto.</li>
+        <li><strong>Plano de ação</strong> — caminhos recomendados, detalhes por eixo e exportação HTML/PDF.</li>
+        <li><strong>Acompanhe a evolução</strong> — gere novos relatórios nos meses seguintes e compare progresso.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="preco">
+    <div class="container">
+      <h2 class="section-title">Investimento</h2>
+      <p class="section-sub">Sem plano mensal. Você paga quando precisa do relatório.</p>
+      <div class="card pricing-card">
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem;">Preview</p>
+        <p class="amount" style="font-size:2rem;margin-bottom:.25rem;">Grátis</p>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:1.5rem;">
+          Mapa + diagnóstico inicial
+        </p>
+        <p style="color:var(--muted);font-size:.9rem;">Relatório completo</p>
+        <p class="amount">R$ 19<small>,90</small></p>
+        <p style="color:var(--muted);font-size:.85rem;margin-bottom:1rem;">por relatório · pagamento avulso</p>
+        <ul>
+          <li>Análise completa com IA</li>
+          <li>Plano de ação prioritizado</li>
+          <li>Exportação HTML / PDF</li>
+          <li>Ideal para entrega mensal (agências)</li>
+        </ul>
+        <a class="btn btn-gold js-cta-app" href="#" style="width:100%;text-align:center;">Começar preview grátis</a>
+        <div class="pay-icons">
+          <span>Pix</span>
+          <span>Cartão</span>
+          <span>Boleto</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="band band-cobalt cta-final">
+    <div class="container">
+      <h2>Pronto para corrigir a rota?</h2>
+      <p>Leva poucos minutos. Preview grátis. Sem compromisso.</p>
+      <a class="btn btn-gold js-cta-app" href="#">Acessar a Bússola Inteligente</a>
+    </div>
+  </div>
+
+  <section>
+    <div class="container">
+      <h2 class="section-title">Perguntas frequentes</h2>
+      <dl class="faq">
+        <dt>Preciso dar senha do Google ou Instagram?</dt>
+        <dd>Não. Analisamos apenas informações públicas e o que você informa voluntariamente.</dd>
+        <dt>Tem assinatura mensal?</dt>
+        <dd>Não. Preview grátis; cada relatório completo custa R$ 19,90, quando você quiser desbloquear.</dd>
+        <dt>Quais formas de pagamento?</dt>
+        <dd>Pix, cartão de crédito e boleto, processados com segurança via Asaas.</dd>
+        <dt>Agências podem usar com clientes?</dt>
+        <dd>Sim — ideal para pré-venda e entrega mensal de evolução da visibilidade digital.</dd>
+        <dt>Substitui uma consultoria humana?</dt>
+        <dd>É apoio de diagnóstico e planejamento. Para execução profunda, a IAExpertise oferece consultoria especializada.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p><strong>Bússola Inteligente</strong> · IAExpertise</p>
+      <p>Eduardo Augusto Sona — Jornalista e Especialista em IA</p>
+      <p style="margin-top:.75rem;">Ferramenta de apoio em presença digital · Dados tratados conforme LGPD</p>
+      <p style="margin-top:.5rem;font-size:.8rem;">© 2026 bussolainteligente.com.br</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Ajuste aqui se mudar app ou vídeo (mesmo ID do YOUTUBE_VIDEO_URL no Railway) */
+    var BUSSOLA_CONFIG = {
+      APP_URL: "https://app.bussolainteligente.com.br/",
+      /* Fallback enquanto DNS do app propaga: */
+      APP_URL_FALLBACK: "https://bussolainteligente-production.up.railway.app/",
+      YOUTUBE_VIDEO_ID: "jNQXAC9IVRw"
+    };
+
+    (function () {
+      var appUrl = BUSSOLA_CONFIG.APP_URL || BUSSOLA_CONFIG.APP_URL_FALLBACK;
+      document.querySelectorAll(".js-cta-app").forEach(function (el) {
+        el.href = appUrl;
+      });
+      var iframe = document.getElementById("hero-video");
+      if (iframe && BUSSOLA_CONFIG.YOUTUBE_VIDEO_ID) {
+        iframe.src = "https://www.youtube.com/embed/" + BUSSOLA_CONFIG.YOUTUBE_VIDEO_ID
+          + "?rel=0&modestbranding=1";
+      }
+    })();
+  </script>
 </body>
 </html>
